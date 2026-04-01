@@ -1,0 +1,19 @@
+{
+  variant: {
+    original: nether_gold_ore
+  }
+  texture: {
+    background: block/netherrack
+  }
+  recipe: {
+    result: gold_ingot
+    group: goldSmelting
+  }
+  gen: [
+    {
+      height: [ 10, 118 ]
+      size: 10
+      count: 10
+    }
+  ]
+}

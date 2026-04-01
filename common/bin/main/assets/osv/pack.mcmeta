@@ -1,0 +1,6 @@
+{
+  "pack": {
+    "pack_format": 8,
+    "description": "Generated assets for OSV. You can replace the assets in this folder or create a separate resource pack. This does not have to go in the resourcepack folder."
+  }
+}

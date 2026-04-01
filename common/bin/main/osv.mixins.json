@@ -1,0 +1,36 @@
+{
+  "required": true,
+  "package": "personthecat.osv.mixin",
+  "compatibilityLevel": "JAVA_16",
+  "mixins": [
+    "BiasedToBottomHeightAccessor",
+    "BlockBehaviourAccessor",
+    "BlockPropertiesAccessor",
+    "BlockStateBuilderAccessor",
+    "ConstantHeightAccessor",
+    "CountPlacementAccessor",
+    "FallingBlockEntityAccessor",
+    "FoodPropertiesBuilderAccessor",
+    "HeightRangePlacementAccessor",
+    "InfestedBlockAccessor",
+    "ItemAccessor",
+    "LootTablesAccessor",
+    "MaterialBuilderAccessor",
+    "MobAccessor",
+    "MobEffectInstanceAccessor",
+    "NamedHolderSetAccessor",
+    "OreBlockAccessor",
+    "RarityFilterAccessor",
+    "RecipeManagerAccessor",
+    "TrapezoidHeightAccessor",
+    "UniformHeightAccessor",
+    "UseOnContextAccessor",
+    "VeryBiasedToBottomHeightAccessor",
+    "WorldGenerationContextMixin",
+    "WorldGenTickListAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8"
+}
