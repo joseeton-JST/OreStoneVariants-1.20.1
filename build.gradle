@@ -1,16 +1,18 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-    id 'architectury-plugin' version "$architectury_version"
-    id 'dev.architectury.loom' version "$architectury_loom_version" apply false
-}
-
-architectury {
-    minecraft = mc_version
+    id "architectury-plugin" apply false
+    id "dev.architectury.loom" apply false
+    id "com.github.johnrengelman.shadow" version "7.1.2" apply false
 }
 
 subprojects {
-    apply plugin: 'dev.architectury.loom'
+    apply plugin: "dev.architectury.loom"
+    apply plugin: "architectury-plugin"
+
+    architectury {
+        minecraft = mc_version
+    }
 
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
@@ -26,47 +28,57 @@ subprojects {
 }
 
 allprojects {
-    apply plugin: 'architectury-plugin'
-    apply plugin: 'java'
+    apply plugin: "java"
+    apply plugin: "maven-publish"
 
     version = mod_version
+    group = rootProject.group
 
     repositories {
-        // More convenient access to CF mods.
-        maven { url = 'http://www.cursemaven.com'; allowInsecureProtocol = true }
-        maven { url 'https://maven.architectury.dev' }
+        maven { url = "https://www.cursemaven.com" }
+        maven { url = "https://maven.architectury.dev" }
         mavenLocal()
         mavenCentral()
     }
 
     dependencies {
-        compileOnly group: 'org.jetbrains', name: 'annotations', version: '16.0.2'
-        compileOnly group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
-        compileOnly group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
+        compileOnly group: "org.jetbrains", name: "annotations", version: "24.1.0"
+        compileOnly group: "javax.annotation", name: "javax.annotation-api", version: "1.3.2"
+        compileOnly group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2"
 
-        compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.26'
-        annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.26'
+        compileOnly group: "org.projectlombok", name: "lombok", version: "1.18.30"
+        annotationProcessor group: "org.projectlombok", name: "lombok", version: "1.18.30"
 
-        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.3.1'
-        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.3.1'
+        testImplementation group: "org.junit.jupiter", name: "junit-jupiter-api", version: "5.10.2"
+        testRuntimeOnly group: "org.junit.jupiter", name: "junit-jupiter-engine", version: "5.10.2"
     }
 
     task processSource(type: Sync) {
         from sourceSets.main.java
-        inputs.properties(mod_version: mod_version, mod_id: mod_id, mod_name: mod_name)
-        filesMatching(['**/Reference.java']) {
-            filter(ReplaceTokens, tokens: [MOD_VERSION: mod_version, MOD_ID: mod_id, MOD_NAME: mod_name])
+        inputs.properties(
+            mod_version: mod_version,
+            mod_id: mod_id,
+            mod_name: mod_name,
+            mod_core_version: mod_core_version
+        )
+        filesMatching(["**/Reference.java"]) {
+            filter(ReplaceTokens, tokens: [
+                MOD_VERSION: mod_version,
+                MOD_CORE_VERSION: mod_core_version,
+                MOD_ID: mod_id,
+                MOD_NAME: mod_name
+            ])
         }
         into "$buildDir/src"
     }
 
     compileJava {
         source = processSource.outputs
-        options.compilerArgs << '-parameters'
+        options.compilerArgs << "-parameters"
     }
 
     jar {
-        archivesBaseName = "$archive_base-$platform"
+        archiveBaseName = "$archive_base-$platform"
     }
 
     tasks.withType(Test) {
@@ -76,6 +88,6 @@ allprojects {
     }
 
     tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
+        options.encoding = "UTF-8"
     }
 }

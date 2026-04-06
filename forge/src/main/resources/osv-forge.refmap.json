@@ -1,0 +1,10 @@
+{
+  "mappings": {
+    "io/github/joseetoon/osv/mixin/BlockColorsAccessor": {
+      "blockColors": "f_92571_:Ljava/util/Map;"
+    },
+    "io/github/joseetoon/osv/mixin/ItemColorsAccessor": {
+      "itemColors": "f_92674_:Ljava/util/Map;"
+    }
+  }
+}

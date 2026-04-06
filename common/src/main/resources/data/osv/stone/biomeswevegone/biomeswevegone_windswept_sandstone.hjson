@@ -1,0 +1,6 @@
+{
+  // BWG Windswept Sandstone - generates beneath windswept sand.
+  enabled: true
+  stone: biomeswevegone:windswept_sandstone
+  source: stone
+}

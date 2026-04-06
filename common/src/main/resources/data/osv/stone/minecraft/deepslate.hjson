@@ -1,0 +1,7 @@
+{
+  // Deepslate fills the world naturally below y=0.
+  // No gen needed — ore variants will spawn within existing deepslate.
+  enabled: true
+  stone: deepslate
+  source: deepslate
+}

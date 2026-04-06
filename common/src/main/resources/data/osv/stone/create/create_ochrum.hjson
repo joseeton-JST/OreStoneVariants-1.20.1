@@ -1,0 +1,5 @@
+{
+  enabled: false
+  stone: create:ochrum
+  source: stone
+}

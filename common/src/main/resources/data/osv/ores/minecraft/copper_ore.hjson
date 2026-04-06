@@ -1,0 +1,17 @@
+// Copper ore — generates across a wide height range, most common around y=48.
+{
+  variant: {
+    original: copper_ore
+  }
+  recipe: {
+    result: copper_ingot
+    xp: 0.7
+  }
+  gen: [
+    {
+      height: [ -16, 112 ]
+      size: 9
+      count: 6
+    }
+  ]
+}

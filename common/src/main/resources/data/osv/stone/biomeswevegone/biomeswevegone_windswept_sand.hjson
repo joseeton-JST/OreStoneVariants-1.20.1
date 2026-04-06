@@ -1,0 +1,6 @@
+{
+  // BWG Windswept Sand - generates in windswept desert biomes.
+  enabled: true
+  stone: biomeswevegone:windswept_sand
+  source: stone
+}

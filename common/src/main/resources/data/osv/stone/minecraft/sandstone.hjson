@@ -1,0 +1,19 @@
+{
+  // Sandstone generates beneath sand in Desert and Beach biomes.
+  enabled: true
+  stone: sandstone
+  source: stone
+  gen: [
+    {
+      height: [ 0, 60 ]
+      size: 33
+      count: 8
+      biomes: {
+        names: [
+          desert
+          beach
+        ]
+      }
+    }
+  ]
+}

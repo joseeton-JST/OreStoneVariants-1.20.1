@@ -1,0 +1,18 @@
+// Gold ore — rare, generates deep in stone and deepslate.
+{
+  variant: {
+    original: gold_ore
+  }
+  recipe: {
+    result: gold_ingot
+    xp: 1
+    time: 200  // Slower smelt than most ores (ticks).
+  }
+  gen: [
+    {
+      height: [ -64, 32 ]
+      size: 9
+      count: 2
+    }
+  ]
+}

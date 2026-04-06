@@ -1,0 +1,20 @@
+{
+  // Red sandstone generates beneath red sand in Badlands biomes.
+  enabled: true
+  stone: red_sandstone
+  source: stone
+  gen: [
+    {
+      height: [ 0, 60 ]
+      size: 33
+      count: 6
+      biomes: {
+        names: [
+          badlands
+          eroded_badlands
+          wooded_badlands
+        ]
+      }
+    }
+  ]
+}

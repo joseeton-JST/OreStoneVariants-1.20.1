@@ -1,0 +1,7 @@
+{
+  // Moss block generates in lush caves and as patches on cave floors.
+  // OSV registers variants for ores found inside moss deposits.
+  enabled: true
+  stone: moss_block
+  source: stone
+}

@@ -1,0 +1,21 @@
+{
+  // Tuff generates as blobs in the deepslate layer (-64 to 0).
+  // OSV replaces vanilla tuff generation with ore-bearing tuff clusters.
+  enabled: true
+  stone: tuff
+  source: deepslate
+  gen: [
+    {
+      height: [ -64, 0 ]
+      size: 23
+      count: 2
+      biomes: {
+        blacklist: true
+        types: [
+          NETHER
+          THE_END
+        ]
+      }
+    }
+  ]
+}

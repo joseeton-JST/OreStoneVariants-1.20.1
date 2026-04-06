@@ -1,0 +1,82 @@
+// Coal ore — ejemplo con múltiples condiciones de generación.
+// Campos no definidos se copian automáticamente del bloque original.
+{
+  variant: {
+    original: coal_ore
+  }
+
+  // La textura NO hace falta definirla — OSV la lee del resource pack automáticamente.
+  // Solo defínela si quieres forzar una textura específica:
+  // texture: {
+  //   original: block/coal_ore
+  //   shade: false
+  // }
+
+  recipe: {
+    result: coal
+    xp: 0.1
+    quantity: 1
+  }
+
+  gen: [
+    // En todos lados excepto desiertos
+    {
+      height: [ 0, 128 ]
+      size: 8
+      count: 17
+      biomes: {
+        // Genera en TODOS los biomas EXCEPTO los listados abajo.
+        blacklist: true
+        names: [
+          minecraft:desert
+          minecraft:desert_hills
+          // En 1.20.1 "mutated_desert" se llama así:
+          minecraft:eroded_badlands
+        ]
+      }
+      // dimensions: {    // Solo si quieres limitar por dimensión.
+      //   blacklist: true
+      //   names: [ modid:dimension_name ]
+      // }
+    }
+
+    // Junglas — más abundante y más alto
+    {
+      height: [ 0, 155 ]
+      size: 16
+      count: 20
+      chance: 0.6
+      biomes: {
+        // Categoría de bioma (no cambia entre versiones).
+        types: JUNGLE
+      }
+      // En 1.16 usabas dimensions: [0, 7] (IDs numéricos).
+      // En 1.20.1 usa nombres de registro:
+      // dimensions: { names: [ minecraft:overworld ] }
+    }
+
+    // Desiertos — menor altura, más frecuente
+    {
+      height: [ 0, 40 ]
+      size: 8
+      count: 28
+      biomes: {
+        names: [
+          minecraft:desert
+          minecraft:desert_hills
+        ]
+      }
+    }
+
+    // Pantanos — venas pequeñas al nivel del agua
+    {
+      height: [ 59, 64 ]
+      size: 2
+      count: 20
+      chance: 0.6
+      biomes: {
+        types: SWAMP
+      }
+    }
+  ]
+}

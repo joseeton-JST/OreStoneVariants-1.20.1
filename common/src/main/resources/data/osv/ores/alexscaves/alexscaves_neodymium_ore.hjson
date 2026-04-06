@@ -1,0 +1,19 @@
+{
+  variant: {
+    original: alexscaves:neodymium_ore
+  }
+  gen: [
+    {
+      height: [ -64, 16 ]
+      count: 3
+      size: 9
+      biomes: {
+        blacklist: true
+        types: [
+          NETHER
+          THE_END
+        ]
+      }
+    }
+  ]
+}

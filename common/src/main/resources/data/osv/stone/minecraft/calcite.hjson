@@ -1,0 +1,8 @@
+{
+  // Calcite forms the outer shell of amethyst geodes.
+  // No OSV gen — relies on vanilla geode generation.
+  // Disable this if you don't want ore variants in geode calcite.
+  enabled: true
+  stone: calcite
+  source: deepslate
+}

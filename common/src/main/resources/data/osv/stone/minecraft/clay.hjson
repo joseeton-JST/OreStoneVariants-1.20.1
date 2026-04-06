@@ -1,0 +1,7 @@
+{
+  // Clay generates naturally as patches in riverbeds and shallow water.
+  // OSV registers variants for ores found inside clay deposits.
+  enabled: true
+  stone: clay
+  source: stone
+}

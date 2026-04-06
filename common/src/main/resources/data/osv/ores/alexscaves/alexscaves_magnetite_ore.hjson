@@ -1,0 +1,19 @@
+{
+  variant: {
+    original: alexscaves:magnetite_ore
+  }
+  gen: [
+    {
+      height: [ -64, 16 ]
+      count: 4
+      size: 12
+      biomes: {
+        blacklist: true
+        types: [
+          NETHER
+          THE_END
+        ]
+      }
+    }
+  ]
+}

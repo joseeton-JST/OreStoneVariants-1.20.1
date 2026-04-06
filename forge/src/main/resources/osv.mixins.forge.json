@@ -1,17 +1,14 @@
 {
   "required": true,
-  "package": "personthecat.osv.mixin.forge",
-  "compatibilityLevel": "JAVA_16",
+  "package": "io.github.joseetoon.osv.mixin.forge",
+  "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "PackRepositoryMixin",
     "ServerResourcesMixin"
   ],
-  "client": [
-    "BlockColorsAccessor",
-    "ItemColorsAccessor"
-  ],
+  "client": [],
   "injectors": {
     "defaultRequire": 1
   },
-  "minVersion": "0.8"
+  "minVersion": "0.8",
+  "refmap": "osv-forge.refmap.json"
 }

@@ -1,0 +1,7 @@
+{
+  // Smooth basalt appears naturally in geodes.
+  // No gen needed. Variants use existing world blocks.
+  enabled: true
+  stone: smooth_basalt
+  source: basalt
+}

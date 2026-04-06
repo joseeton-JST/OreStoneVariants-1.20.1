@@ -1,0 +1,18 @@
+// Lapis lazuli ore — generates deep, most common around y=0.
+{
+  variant: {
+    original: lapis_ore
+  }
+  recipe: {
+    result: lapis_lazuli
+    xp: 0.2
+    time: 200
+  }
+  gen: [
+    {
+      height: [ -64, 32 ]
+      size: 7
+      count: 2
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+// Diamond ore — very rare, found deep in stone and deepslate.
+{
+  variant: {
+    original: diamond_ore
+  }
+  recipe: {
+    result: diamond
+    xp: 1
+  }
+  gen: [
+    {
+      height: [ -64, 16 ]
+      size: 8
+      count: 1
+    }
+  ]
+}

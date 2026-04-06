@@ -1,0 +1,6 @@
+{
+  // Create's Asurine generates naturally; no custom stone gen required.
+  enabled: true
+  stone: create:asurine
+  source: stone
+}

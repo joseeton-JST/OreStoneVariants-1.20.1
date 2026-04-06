@@ -1,0 +1,19 @@
+{
+  variant: {
+    original: alexscaves:galena_ore
+  }
+  gen: [
+    {
+      height: [ -64, 20 ]
+      count: 3
+      size: 9
+      biomes: {
+        blacklist: true
+        types: [
+          NETHER
+          THE_END
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  // Create's Veridium generates naturally; no custom stone gen required.
+  enabled: true
+  stone: create:veridium
+  source: stone
+}

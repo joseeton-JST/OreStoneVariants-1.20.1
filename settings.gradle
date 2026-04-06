@@ -1,24 +1,17 @@
 pluginManagement {
     repositories {
-        maven {
-            name = 'Fabric'
-            url = 'https://maven.fabricmc.net/'
-        }
-        maven {
-            name = 'Forge'
-            url = 'https://files.minecraftforge.net/maven/'
-        }
-        maven {
-            name = 'Architectury'
-            url = 'https://maven.architectury.dev'
-        }
-        mavenCentral()
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        maven { name = 'Forge'; url = 'https://maven.minecraftforge.net/' }
+        maven { name = 'Architectury'; url = 'https://maven.architectury.dev' }
         gradlePluginPortal()
+        mavenCentral()
+    }
+    plugins {
+        id "architectury-plugin" version "3.4.145"
+        id "dev.architectury.loom" version "1.6.422"
     }
 }
 
 rootProject.name = 'OSV'
 
 include 'common', 'forge'
-
-startParameter.excludedTaskNames += [':build']

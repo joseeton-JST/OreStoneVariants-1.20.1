@@ -1,0 +1,25 @@
+// Emerald ore — rare, only in mountain (Extreme Hills) biomes.
+{
+  variant: {
+    original: emerald_ore
+  }
+  recipe: {
+    result: emerald
+    xp: 1
+  }
+  gen: [
+    {
+      height: [ 4, 32 ]
+      size: 3
+      count: [ 3, 8 ]  // Random count between 3 and 8 per chunk.
+
+      // Biome filter — whitelist specific biome IDs or categories.
+      biomes: {
+        // blacklist: false   // Set true to EXCLUDE instead of include.
+        types: EXTREME_HILLS  // Built-in biome category. Can also be a list: [ TYPE1, TYPE2 ].
+        // names: [ minecraft:windswept_hills ]  // Exact biome IDs.
+        // mods: [ modid ]    // All biomes from a mod.
+      }
+    }
+  ]
+}

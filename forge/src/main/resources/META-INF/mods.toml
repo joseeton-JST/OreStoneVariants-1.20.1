@@ -12,14 +12,29 @@ authors="${mod_authors}"
 description="${mod_description}"
 
 [[dependencies.${mod_id}]]
-modId="catlib"
+modId="genlib"
 mandatory=true
-versionRange="[${catlib_min_version},)"
+versionRange="[${genlib_version},)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
 modId="create"
 mandatory=false
+versionRange="[0,)"
 ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="forge"
+mandatory=true
+versionRange="[${forge_min_version},)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="minecraft"
+mandatory=true
+versionRange="[${mc_version},)"
+ordering="NONE"
 side="BOTH"

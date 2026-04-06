@@ -1,9 +1,15 @@
-
 architectury {
-    it.common(rootProject.enabled_platforms.split(","))
+    common("forge")
+}
+
+loom {
+    mixin {
+        defaultRefmapName = "osv.refmap.json"
+    }
 }
 
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:$loader_version"
-    modImplementation "com.personthecat:catlib:$catlib_version"
+    modApi "dev.architectury:architectury:$architectury_version"
+    modCompileOnly "io.github.joseetoon:genlib-forge:$genlib_version"
 }

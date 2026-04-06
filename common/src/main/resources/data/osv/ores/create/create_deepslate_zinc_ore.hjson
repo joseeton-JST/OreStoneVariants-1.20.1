@@ -1,0 +1,18 @@
+{
+  variant: {
+    original: create:deepslate_zinc_ore
+  }
+  recipe: {
+    result: create:zinc_ingot
+    xp: 0.1
+    time: 100
+  }
+  texture: {
+    original: create:block/deepslate_zinc_ore
+  }
+  // Passive by default. Vanilla/Create worldgen places it.
+  gen: {
+    enabled: false
+    features: []
+  }
+}

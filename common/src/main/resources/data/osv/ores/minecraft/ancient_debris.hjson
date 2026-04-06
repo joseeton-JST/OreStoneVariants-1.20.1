@@ -1,0 +1,33 @@
+// Ancient debris — generates deep in the Nether, very rare.
+{
+  variant: {
+    original: ancient_debris
+  }
+
+  texture: {
+    background: block/netherrack
+  }
+
+  gen: [
+    {
+      height: [ 8, 22 ]
+      size: 3
+      count: 1
+      chance: 0.1
+      biomes: {
+        blacklist: true
+        types: [ OVERWORLD, THE_END ]
+      }
+    }
+    {
+      height: [ 8, 119 ]
+      size: 2
+      count: 1
+      chance: 0.01
+      biomes: {
+        blacklist: true
+        types: [ OVERWORLD, THE_END ]
+      }
+    }
+  ]
+}

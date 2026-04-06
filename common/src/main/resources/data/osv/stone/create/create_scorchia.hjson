@@ -1,0 +1,6 @@
+{
+  // Create's Scorchia generates in the Nether.
+  enabled: true
+  stone: create:scorchia
+  source: netherrack
+}
