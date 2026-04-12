@@ -36,9 +36,11 @@ public class TomlFileConfig {
             final CommentedFileConfig cfg = CommentedFileConfig.builder(tomlFile.toPath(), TomlFormat.instance())
                 .sync()
                 .build();
+
             if (tomlFile.exists()) {
                 cfg.load();
             }
+
             // Wrap to normalize complex values before TOML serialization
             return new TomlConfigWrapper(cfg);
         } catch (final Exception e) {
