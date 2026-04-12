@@ -11,3 +11,4 @@ logs/
 *.prefs
 *.project
 *.iml
+/.claude
