@@ -272,8 +272,7 @@ public class CfgImpl {
     }
 
     private static CommentedFileConfig readConfig(final boolean client) {
-        final ConfigFile cfg = ConfigProvider.loadFile(client);
-        return new HjsonFileConfig(cfg.file, cfg.json);
+        return TomlFileConfig.load(client);
     }
 
     public static File getCommon() {

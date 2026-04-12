@@ -54,11 +54,11 @@ public class ConfigProvider {
     }
 
     private static String createFilename(final boolean client) {
-        return Reference.MOD_ID + (client ? "-client.xjs" : "-common.xjs");
+        return Reference.MOD_ID + (client ? "-client.toml" : "-common.toml");
     }
 
     @Nullable
-    private static ConfigFile tryLoad(final File file) {
+    public static ConfigFile tryLoad(final File file) {
         final String contents = FileIO.contents(file).orElse(null);
         if (contents == null) return new ConfigFile(file, new JsonObject());
         try {

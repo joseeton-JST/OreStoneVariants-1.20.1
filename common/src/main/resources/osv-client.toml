@@ -1,0 +1,35 @@
+# OreStoneVariants Client Configuration
+# Edit this file to customize your client-side experience
+
+[resources]
+# Attempts to generate any new ore sprites from the topmost resource pack.
+# Not an ideal solution for many resource packs.
+assetsFromRP = true
+
+[models]
+# Indicates whether to enable shading in generated block models
+overlayShade = true
+
+# Whether textures should be rendered with support for a full range of opacity
+# You may want to disable this if you're using shaders
+overlayTransparency = true
+
+# How much larger the overlay model is than the background model
+# Lower values may look better, but cause z-fighting
+overlayScale = 1.001
+
+# The default type of model to generate for all ores
+type = "SINGLE"
+
+[textures]
+# Whether textures should use variable opacity to push and pull the background sprite
+shadeModifier = true
+
+[blocks]
+# Whether to automatically reload resources after enabling the generated resource pack
+# This may result in fewer missing textures in rare cases
+autoRefresh = false
+
+[items]
+# Item display formatter configuration (configured via dynamic categories)
+# Default formatters for dense and normal ores
