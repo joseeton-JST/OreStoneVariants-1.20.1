@@ -292,20 +292,67 @@ public class TomlFileConfig {
         }
 
         /**
-         * Recursively normalize all values in the config to prevent TOML serialization errors.
+         * Recursively normalize ALL values in the config (including nested ones)
+         * to prevent TOML serialization errors from unsupported types.
          */
         private void normalizeAllValues(final CommentedFileConfig config) {
+            normalizeAllValuesRecursive(config, new java.util.ArrayList<>());
+        }
+
+        private void normalizeAllValuesRecursive(final CommentedFileConfig config, final java.util.List<String> path) {
             final java.util.List<String> keysToNormalize = new java.util.ArrayList<>();
+
             for (final String key : config.valueMap().keySet()) {
-                final Object value = config.getRaw(java.util.Collections.singletonList(key));
-                if (value != null && !(value instanceof String || value instanceof Number || value instanceof Boolean)) {
+                final java.util.List<String> keyPath = new java.util.ArrayList<>(path);
+                keyPath.add(key);
+                final Object value = config.getRaw(keyPath);
+
+                // Recurse into nested Config objects
+                if (value instanceof CommentedFileConfig) {
+                    normalizeAllValuesRecursive((CommentedFileConfig) value, keyPath);
+                } else if (value instanceof com.electronwill.nightconfig.core.Config) {
+                    // Generic Config (not CommentedFileConfig)
+                    normalizeAllValuesRecursive((com.electronwill.nightconfig.core.Config) value, keyPath);
+                } else if (value != null && !(value instanceof String || value instanceof Number || value instanceof Boolean)) {
+                    // This value needs normalization
                     keysToNormalize.add(key);
                 }
             }
-            // Now normalize
+
+            // Normalize all problematic values at this level
             for (final String key : keysToNormalize) {
-                final Object original = config.getRaw(java.util.Collections.singletonList(key));
-                config.set(java.util.Collections.singletonList(key), normalizeForToml(original));
+                final java.util.List<String> keyPath = new java.util.ArrayList<>(path);
+                keyPath.add(key);
+                final Object original = config.getRaw(keyPath);
+                config.set(keyPath, normalizeForToml(original));
+            }
+        }
+
+        private void normalizeAllValuesRecursive(final com.electronwill.nightconfig.core.Config config,
+                                                  final java.util.List<String> path) {
+            final java.util.List<String> keysToNormalize = new java.util.ArrayList<>();
+
+            for (final String key : config.valueMap().keySet()) {
+                final java.util.List<String> keyPath = new java.util.ArrayList<>(path);
+                keyPath.add(key);
+                final Object value = config.getRaw(keyPath);
+
+                // Recurse into nested Config objects
+                if (value instanceof CommentedFileConfig) {
+                    normalizeAllValuesRecursive((CommentedFileConfig) value, keyPath);
+                } else if (value instanceof com.electronwill.nightconfig.core.Config) {
+                    normalizeAllValuesRecursive((com.electronwill.nightconfig.core.Config) value, keyPath);
+                } else if (value != null && !(value instanceof String || value instanceof Number || value instanceof Boolean)) {
+                    keysToNormalize.add(key);
+                }
+            }
+
+            // Normalize all problematic values at this level
+            for (final String key : keysToNormalize) {
+                final java.util.List<String> keyPath = new java.util.ArrayList<>(path);
+                keyPath.add(key);
+                final Object original = config.getRaw(keyPath);
+                config.set(keyPath, normalizeForToml(original));
             }
         }
     }
