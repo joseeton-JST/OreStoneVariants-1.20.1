@@ -39,7 +39,8 @@ public class TomlFileConfig {
             if (tomlFile.exists()) {
                 cfg.load();
             }
-            return cfg;
+            // Wrap to normalize complex values before TOML serialization
+            return new TomlConfigWrapper(cfg);
         } catch (final Exception e) {
             log.error("Error loading TOML config {}: {}", tomlFile.getName(), e.getMessage());
             throw new RuntimeException("Failed to load TOML config: " + tomlFile.getName(), e);
@@ -82,7 +83,8 @@ public class TomlFileConfig {
             final String key = member.getName();
             final Object value = jsonToNative(member.getValue());
             if (value != null) {
-                toml.set(key, value);
+                // Normalize complex types before storing in TOML
+                toml.set(key, normalizeForToml(value));
             }
         }
     }
@@ -111,4 +113,186 @@ public class TomlFileConfig {
             return value.asRaw();
         }
     }
+
+    /**
+     * Normalizes values for TOML serialization. Converts complex/unsupported types
+     * (Maps, BiMaps, etc.) to basic types that TOML can handle.
+     */
+    public static Object normalizeForToml(Object value) {
+        if (value == null) return null;
+
+        // Handle Maps (including BiMap and other custom Map types)
+        if (value instanceof java.util.Map) {
+            final java.util.Map<?, ?> map = (java.util.Map<?, ?>) value;
+            final java.util.LinkedHashMap<String, Object> normalized = new java.util.LinkedHashMap<>();
+            for (final java.util.Map.Entry<?, ?> entry : map.entrySet()) {
+                final String key = String.valueOf(entry.getKey());
+                normalized.put(key, normalizeForToml(entry.getValue()));
+            }
+            return normalized;
+        }
+
+        // Handle Lists
+        if (value instanceof java.util.List) {
+            final java.util.List<?> list = (java.util.List<?>) value;
+            final java.util.List<Object> normalized = new java.util.ArrayList<>();
+            for (final Object item : list) {
+                normalized.add(normalizeForToml(item));
+            }
+            return normalized;
+        }
+
+        // Allow primitive types, Strings, and Numbers
+        if (value instanceof String || value instanceof Number || value instanceof Boolean) {
+            return value;
+        }
+
+        // For anything else, convert to String
+        return value.toString();
+    }
+
+    /**
+     * Wrapper around CommentedFileConfig that normalizes complex types before save.
+     */
+    private static class TomlConfigWrapper implements CommentedFileConfig {
+        private final CommentedFileConfig delegate;
+
+        TomlConfigWrapper(final CommentedFileConfig delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public <T> T set(java.util.List<String> path, Object value) {
+            return delegate.set(path, normalizeForToml(value));
+        }
+
+        @Override
+        public <T> T getRaw(java.util.List<String> path) {
+            return delegate.getRaw(path);
+        }
+
+        @Override
+        public boolean contains(java.util.List<String> path) {
+            return delegate.contains(path);
+        }
+
+        @Override
+        public <T> T remove(java.util.List<String> path) {
+            return delegate.remove(path);
+        }
+
+        @Override
+        public void clear() {
+            delegate.clear();
+        }
+
+        @Override
+        public int size() {
+            return delegate.size();
+        }
+
+        @Override
+        public java.util.Map<String, Object> valueMap() {
+            return delegate.valueMap();
+        }
+
+        @Override
+        public java.util.Set<? extends com.electronwill.nightconfig.core.CommentedConfig.Entry> entrySet() {
+            return delegate.entrySet();
+        }
+
+        @Override
+        public String setComment(java.util.List<String> path, String comment) {
+            return delegate.setComment(path, comment);
+        }
+
+        @Override
+        public String getComment(java.util.List<String> path) {
+            return delegate.getComment(path);
+        }
+
+        @Override
+        public boolean containsComment(java.util.List<String> path) {
+            return delegate.containsComment(path);
+        }
+
+        @Override
+        public String removeComment(java.util.List<String> path) {
+            return delegate.removeComment(path);
+        }
+
+        @Override
+        public java.util.Map<String, String> commentMap() {
+            return delegate.commentMap();
+        }
+
+        @Override
+        public void clearComments() {
+            delegate.clearComments();
+        }
+
+        @Override
+        public com.electronwill.nightconfig.core.CommentedConfig createSubConfig() {
+            return delegate.createSubConfig();
+        }
+
+        @Override
+        public File getFile() {
+            return delegate.getFile();
+        }
+
+        @Override
+        public java.nio.file.Path getNioPath() {
+            return delegate.getNioPath();
+        }
+
+        @Override
+        public void save() {
+            // Normalize all values before saving
+            normalizeAllValues(delegate);
+            delegate.save();
+        }
+
+        @Override
+        public void load() {
+            delegate.load();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public com.electronwill.nightconfig.core.ConfigFormat<CommentedFileConfig> configFormat() {
+            @SuppressWarnings("unchecked")
+            final com.electronwill.nightconfig.core.ConfigFormat<CommentedFileConfig> fmt =
+                (com.electronwill.nightconfig.core.ConfigFormat<CommentedFileConfig>) (Object) delegate.configFormat();
+            return fmt;
+        }
+
+        @Override
+        public boolean add(java.util.List<String> path, Object value) {
+            return delegate.add(path, normalizeForToml(value));
+        }
+
+        /**
+         * Recursively normalize all values in the config to prevent TOML serialization errors.
+         */
+        private void normalizeAllValues(final CommentedFileConfig config) {
+            final java.util.List<String> keysToNormalize = new java.util.ArrayList<>();
+            for (final String key : config.valueMap().keySet()) {
+                final Object value = config.getRaw(java.util.Collections.singletonList(key));
+                if (value != null && !(value instanceof String || value instanceof Number || value instanceof Boolean)) {
+                    keysToNormalize.add(key);
+                }
+            }
+            // Now normalize
+            for (final String key : keysToNormalize) {
+                final Object original = config.getRaw(java.util.Collections.singletonList(key));
+                config.set(java.util.Collections.singletonList(key), normalizeForToml(original));
+            }
+        }
+    }
+
 }
