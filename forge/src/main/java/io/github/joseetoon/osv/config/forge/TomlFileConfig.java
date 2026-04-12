@@ -119,15 +119,19 @@ public class TomlFileConfig {
     /**
      * Normalizes values for TOML serialization.
      * NightConfig's own Config objects (sub-sections) are left as-is so the TOML
-     * writer produces proper [table] sections. Only truly unsupported types like
-     * BiMap or other custom Java objects are converted to standard types.
+     * writer produces proper [table] sections. BUT we MUST recursively normalize
+     * values INSIDE those Config objects to catch nested BiMaps, etc.
      */
     public static Object normalizeForToml(Object value) {
         if (value == null) return null;
 
-        // NightConfig's own Config/CommentedConfig — let the TOML writer handle them
-        // as proper [table] sections. Converting these to String would destroy structure.
+        // NightConfig's own Config/CommentedConfig — preserve structure but normalize contents
+        if (value instanceof CommentedFileConfig) {
+            normalizeConfigInPlace((CommentedFileConfig) value);
+            return value;
+        }
         if (value instanceof com.electronwill.nightconfig.core.Config) {
+            normalizeConfigInPlace((com.electronwill.nightconfig.core.Config) value);
             return value;
         }
 
@@ -164,6 +168,41 @@ public class TomlFileConfig {
 
         // Last resort: toString
         return value.toString();
+    }
+
+    /**
+     * Recursively normalize all values INSIDE a Config object.
+     * This ensures BiMaps and other unsupported types nested within Config sub-sections
+     * are converted to standard java.util types before serialization.
+     */
+    private static void normalizeConfigInPlace(final com.electronwill.nightconfig.core.Config config) {
+        final java.util.List<String> keysToUpdate = new java.util.ArrayList<>();
+
+        // First pass: identify which values need normalization
+        for (final String key : config.valueMap().keySet()) {
+            final Object value = config.getRaw(java.util.Collections.singletonList(key));
+            if (value != null && shouldNormalize(value)) {
+                keysToUpdate.add(key);
+            }
+        }
+
+        // Second pass: update values that need normalization
+        for (final String key : keysToUpdate) {
+            final Object original = config.getRaw(java.util.Collections.singletonList(key));
+            final Object normalized = normalizeForToml(original);
+            config.set(java.util.Collections.singletonList(key), normalized);
+        }
+    }
+
+    /**
+     * Check if a value should be normalized (is a complex/unsupported type).
+     */
+    private static boolean shouldNormalize(final Object value) {
+        if (value == null) return false;
+        if (value instanceof String || value instanceof Number || value instanceof Boolean) return false;
+        if (value instanceof Enum) return false;
+        if (value instanceof com.electronwill.nightconfig.core.Config) return true; // Need to check inside
+        return true; // Everything else needs normalization
     }
 
     /**
