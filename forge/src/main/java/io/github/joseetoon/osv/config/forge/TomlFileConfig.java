@@ -115,24 +115,32 @@ public class TomlFileConfig {
     }
 
     /**
-     * Normalizes values for TOML serialization. Converts complex/unsupported types
-     * (Maps, BiMaps, etc.) to basic types that TOML can handle.
+     * Normalizes values for TOML serialization.
+     * NightConfig's own Config objects (sub-sections) are left as-is so the TOML
+     * writer produces proper [table] sections. Only truly unsupported types like
+     * BiMap or other custom Java objects are converted to standard types.
      */
     public static Object normalizeForToml(Object value) {
         if (value == null) return null;
 
-        // Handle Maps (including BiMap and other custom Map types)
+        // NightConfig's own Config/CommentedConfig — let the TOML writer handle them
+        // as proper [table] sections. Converting these to String would destroy structure.
+        if (value instanceof com.electronwill.nightconfig.core.Config) {
+            return value;
+        }
+
+        // Standard java.util.Map (including BiMap and other custom Map types)
+        // Convert to a plain LinkedHashMap that TOML can serialize as an inline table
         if (value instanceof java.util.Map) {
             final java.util.Map<?, ?> map = (java.util.Map<?, ?>) value;
             final java.util.LinkedHashMap<String, Object> normalized = new java.util.LinkedHashMap<>();
             for (final java.util.Map.Entry<?, ?> entry : map.entrySet()) {
-                final String key = String.valueOf(entry.getKey());
-                normalized.put(key, normalizeForToml(entry.getValue()));
+                normalized.put(String.valueOf(entry.getKey()), normalizeForToml(entry.getValue()));
             }
             return normalized;
         }
 
-        // Handle Lists
+        // Handle Lists — recurse into each element
         if (value instanceof java.util.List) {
             final java.util.List<?> list = (java.util.List<?>) value;
             final java.util.List<Object> normalized = new java.util.ArrayList<>();
@@ -142,12 +150,17 @@ public class TomlFileConfig {
             return normalized;
         }
 
-        // Allow primitive types, Strings, and Numbers
+        // Primitives and Strings are fine
         if (value instanceof String || value instanceof Number || value instanceof Boolean) {
             return value;
         }
 
-        // For anything else, convert to String
+        // Enums — serialize as their name string
+        if (value instanceof Enum) {
+            return ((Enum<?>) value).name();
+        }
+
+        // Last resort: toString
         return value.toString();
     }
 
