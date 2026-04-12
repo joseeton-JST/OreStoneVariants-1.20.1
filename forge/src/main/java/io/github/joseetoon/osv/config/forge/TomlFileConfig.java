@@ -2,6 +2,7 @@ package io.github.joseetoon.osv.config.forge;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.toml.TomlFormat;
+import io.github.joseetoon.genlib.config.HjsonFileConfig;
 import lombok.extern.log4j.Log4j2;
 import io.github.joseetoon.genlib.util.McUtils;
 import io.github.joseetoon.osv.config.ConfigProvider;
@@ -125,6 +126,11 @@ public class TomlFileConfig {
     public static Object normalizeForToml(Object value) {
         if (value == null) return null;
 
+        // Check for unsupported types early and skip them
+        if (isUnsupportedForToml(value)) {
+            return null; // Skip completely
+        }
+
         // NightConfig's own Config/CommentedConfig — preserve structure but normalize contents
         if (value instanceof CommentedFileConfig) {
             normalizeConfigInPlace((CommentedFileConfig) value);
@@ -141,19 +147,26 @@ public class TomlFileConfig {
             final java.util.Map<?, ?> map = (java.util.Map<?, ?>) value;
             final java.util.LinkedHashMap<String, Object> normalized = new java.util.LinkedHashMap<>();
             for (final java.util.Map.Entry<?, ?> entry : map.entrySet()) {
-                normalized.put(String.valueOf(entry.getKey()), normalizeForToml(entry.getValue()));
+                final Object normalized_value = normalizeForToml(entry.getValue());
+                if (normalized_value != null) {
+                    normalized.put(String.valueOf(entry.getKey()), normalized_value);
+                }
             }
             return normalized;
         }
 
-        // Handle Lists — recurse into each element
+        // Handle Lists — recurse into each element, filtering out null/unsupported items
         if (value instanceof java.util.List) {
             final java.util.List<?> list = (java.util.List<?>) value;
             final java.util.List<Object> normalized = new java.util.ArrayList<>();
             for (final Object item : list) {
-                normalized.add(normalizeForToml(item));
+                final Object normalized_item = normalizeForToml(item);
+                // Skip items that normalize to null (unsupported types)
+                if (normalized_item != null) {
+                    normalized.add(normalized_item);
+                }
             }
-            return normalized;
+            return normalized.isEmpty() ? null : normalized;
         }
 
         // Primitives and Strings are fine
@@ -171,26 +184,52 @@ public class TomlFileConfig {
     }
 
     /**
+     * Check if a value is completely unsupported by TOML.
+     */
+    private static boolean isUnsupportedForToml(final Object value) {
+        if (value == null) return false;
+        final String className = value.getClass().getName();
+        return className.contains("BiMap") ||
+               className.contains("google.common") ||
+               className.contains("ImmutableMap") ||
+               className.contains("ImmutableList");
+    }
+
+    /**
      * Recursively normalize all values INSIDE a Config object.
      * This ensures BiMaps and other unsupported types nested within Config sub-sections
      * are converted to standard java.util types before serialization.
      */
     private static void normalizeConfigInPlace(final com.electronwill.nightconfig.core.Config config) {
         final java.util.List<String> keysToUpdate = new java.util.ArrayList<>();
+        final java.util.List<String> keysToRemove = new java.util.ArrayList<>();
 
-        // First pass: identify which values need normalization
+        // First pass: identify which values need normalization or removal
         for (final String key : config.valueMap().keySet()) {
             final Object value = config.getRaw(java.util.Collections.singletonList(key));
-            if (value != null && shouldNormalize(value)) {
-                keysToUpdate.add(key);
+            if (value != null) {
+                if (isUnsupportedForToml(value)) {
+                    keysToRemove.add(key);
+                } else if (shouldNormalize(value)) {
+                    keysToUpdate.add(key);
+                }
             }
+        }
+
+        // Remove completely unsupported values
+        for (final String key : keysToRemove) {
+            config.remove(key);
         }
 
         // Second pass: update values that need normalization
         for (final String key : keysToUpdate) {
             final Object original = config.getRaw(java.util.Collections.singletonList(key));
             final Object normalized = normalizeForToml(original);
-            config.set(java.util.Collections.singletonList(key), normalized);
+            if (normalized != null) {
+                config.set(java.util.Collections.singletonList(key), normalized);
+            } else {
+                config.remove(key);
+            }
         }
     }
 
@@ -217,6 +256,11 @@ public class TomlFileConfig {
 
         @Override
         public <T> T set(java.util.List<String> path, Object value) {
+            // Reject unsupported types entirely - they can't be in TOML
+            if (isUnsupportedForToml(value)) {
+                log.warn("Skipping unsupported type for TOML at path {}: {}", path, value.getClass().getName());
+                return null;
+            }
             return delegate.set(path, normalizeForToml(value));
         }
 
@@ -302,9 +346,68 @@ public class TomlFileConfig {
 
         @Override
         public void save() {
-            // Normalize all values before saving
-            normalizeAllValues(delegate);
-            delegate.save();
+            try {
+                // Aggressively filter and normalize all values before saving
+                filterAndNormalizeAllValues(delegate);
+                log.info("Saving TOML config after filtering unsupported types");
+                delegate.save();
+            } catch (final Exception e) {
+                // If still fails, log and try one more time after clearing problematic sections
+                log.warn("Save failed, attempting aggressive cleanup: {}", e.getMessage());
+                aggressiveCleanup(delegate);
+                delegate.save();
+            }
+        }
+
+        /**
+         * Last resort: remove entire sections that contain unsupported types
+         */
+        private void aggressiveCleanup(final CommentedFileConfig config) {
+            final java.util.List<String> keysToRemove = new java.util.ArrayList<>();
+
+            // Scan all top-level keys
+            for (final String key : new java.util.ArrayList<>(config.valueMap().keySet())) {
+                final Object value = config.getRaw(java.util.Collections.singletonList(key));
+                if (containsUnsupported(value)) {
+                    log.warn("Removing entire section '{}' due to unsupported types", key);
+                    keysToRemove.add(key);
+                }
+            }
+
+            for (final String key : keysToRemove) {
+                config.remove(key);
+            }
+        }
+
+        /**
+         * Recursively check if a value or any nested value contains unsupported types
+         */
+        private boolean containsUnsupported(final Object value) {
+            if (value == null) return false;
+
+            if (isUnsupportedForToml(value)) {
+                return true;
+            }
+
+            if (value instanceof java.util.Map) {
+                for (final Object v : ((java.util.Map<?, ?>) value).values()) {
+                    if (containsUnsupported(v)) return true;
+                }
+            }
+
+            if (value instanceof java.util.List) {
+                for (final Object item : (java.util.List<?>) value) {
+                    if (containsUnsupported(item)) return true;
+                }
+            }
+
+            if (value instanceof com.electronwill.nightconfig.core.Config) {
+                for (final Object v : ((com.electronwill.nightconfig.core.Config) value).valueMap().values()) {
+                    if (containsUnsupported(v)) return true;
+                }
+            }
+
+            return false;
         }
 
         @Override
@@ -327,7 +430,22 @@ public class TomlFileConfig {
 
         @Override
         public boolean add(java.util.List<String> path, Object value) {
-            return delegate.add(path, normalizeForToml(value));
+            // Reject unsupported types entirely
+            if (isUnsupportedForToml(value)) {
+                log.warn("Skipping unsupported type for TOML at path {}: {}", path, value.getClass().getName());
+                return false;
+            }
+            final Object normalized = normalizeForToml(value);
+            return normalized != null && delegate.add(path, normalized);
+        }
+
+        /**
+         * Filter and normalize all values before TOML serialization.
+         * Removes unsupported types (BiMaps, etc.) that cannot be serialized to TOML.
+         * These dynamic values (like formatters) will be regenerated on next load.
+         */
+        private void filterAndNormalizeAllValues(final CommentedFileConfig config) {
+            filterAndNormalizeRecursive(config, new java.util.ArrayList<>());
         }
 
         /**
@@ -392,6 +510,93 @@ public class TomlFileConfig {
                 keyPath.add(key);
                 final Object original = config.getRaw(keyPath);
                 config.set(keyPath, normalizeForToml(original));
+            }
+        }
+
+        /**
+         * Recursively filter out unsupported types (BiMaps, etc.) from the config
+         * before TOML serialization. Dynamic values will be regenerated on load.
+         */
+        private void filterAndNormalizeRecursive(final CommentedFileConfig config, final java.util.List<String> path) {
+            final java.util.List<String> keysToRemove = new java.util.ArrayList<>();
+            final java.util.List<String> keysToNormalize = new java.util.ArrayList<>();
+
+            for (final String key : config.valueMap().keySet()) {
+                final java.util.List<String> keyPath = new java.util.ArrayList<>(path);
+                keyPath.add(key);
+                final Object value = config.getRaw(keyPath);
+
+                if (value instanceof CommentedFileConfig) {
+                    filterAndNormalizeRecursive((CommentedFileConfig) value, keyPath);
+                } else if (value instanceof com.electronwill.nightconfig.core.Config) {
+                    filterAndNormalizeRecursive((com.electronwill.nightconfig.core.Config) value, keyPath);
+                } else if (isUnsupportedForToml(value)) {
+                    // Remove unsupported types (BiMap, etc.) - will be regenerated on load
+                    keysToRemove.add(key);
+                } else if (value != null && !(value instanceof String || value instanceof Number || value instanceof Boolean)) {
+                    keysToNormalize.add(key);
+                }
+            }
+
+            // Remove completely unsupported types
+            for (final String key : keysToRemove) {
+                config.remove(key);
+            }
+
+            // Normalize convertible types
+            for (final String key : keysToNormalize) {
+                final java.util.List<String> keyPath = new java.util.ArrayList<>(path);
+                keyPath.add(key);
+                final Object original = config.getRaw(keyPath);
+                final Object normalized = normalizeForToml(original);
+                if (normalized != null) {
+                    config.set(keyPath, normalized);
+                } else {
+                    config.remove(keyPath);
+                }
+            }
+        }
+
+        /**
+         * Recursively filter out unsupported types from a generic Config object.
+         */
+        private void filterAndNormalizeRecursive(final com.electronwill.nightconfig.core.Config config,
+                                                  final java.util.List<String> path) {
+            final java.util.List<String> keysToRemove = new java.util.ArrayList<>();
+            final java.util.List<String> keysToNormalize = new java.util.ArrayList<>();
+
+            for (final String key : config.valueMap().keySet()) {
+                final java.util.List<String> keyPath = new java.util.ArrayList<>(path);
+                keyPath.add(key);
+                final Object value = config.getRaw(keyPath);
+
+                if (value instanceof CommentedFileConfig) {
+                    filterAndNormalizeRecursive((CommentedFileConfig) value, keyPath);
+                } else if (value instanceof com.electronwill.nightconfig.core.Config) {
+                    filterAndNormalizeRecursive((com.electronwill.nightconfig.core.Config) value, keyPath);
+                } else if (isUnsupportedForToml(value)) {
+                    keysToRemove.add(key);
+                } else if (value != null && !(value instanceof String || value instanceof Number || value instanceof Boolean)) {
+                    keysToNormalize.add(key);
+                }
+            }
+
+            // Remove unsupported types
+            for (final String key : keysToRemove) {
+                config.remove(key);
+            }
+
+            // Normalize convertible types
+            for (final String key : keysToNormalize) {
+                final java.util.List<String> keyPath = new java.util.ArrayList<>(path);
+                keyPath.add(key);
+                final Object original = config.getRaw(keyPath);
+                final Object normalized = normalizeForToml(original);
+                if (normalized != null) {
+                    config.set(keyPath, normalized);
+                } else {
+                    config.remove(keyPath);
+                }
             }
         }
     }
