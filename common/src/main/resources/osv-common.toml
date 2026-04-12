@@ -1,118 +1,177 @@
-# OreStoneVariants Common Configuration
-# This file handles server-side and shared mod behavior
+# ╔═══════════════════════════════════════════════════════════════════════════════╗
+# ║              OreStoneVariants (OSV) - Common Configuration                     ║
+# ║              Server-side and shared mod behavior settings                       ║
+# ╚═══════════════════════════════════════════════════════════════════════════════╝
+#
+# This file controls the core behavior of OreStoneVariants:
+#  - Which ores spawn in which blocks
+#  - World generation settings
+#  - Compatibility with other mods
+#
+# After editing, restart your game/server for changes to take effect.
 
 [blockRegistry]
-# You can use this registry to add as many new ore types as you like using any
-# background block at all. Block models, textures, world generation, and other
-# properties are handled dynamically. These blocks will only spawn in whichever
-# block or block state is listed as the background block. The ores retain a mixture
-# of their original properties + those of their background.
+# ────────────────────────────────────────────────────────────────────────────────
+# BLOCK REGISTRY - Configure which ore variants spawn where
+# ────────────────────────────────────────────────────────────────────────────────
 #
-# The basic syntax is like this: "<ore> <background>." For example, to spawn
-# coal ore inside of sand, you would type "coal_ore sand." Alternatively, you
-# can list out any number of ore blocks inside of a new or existing PropertyGroup
-# below and use its name in the place of "<ore>." Likewise, "<background>" can
-# be replaced with the name of a BlockGroup, as registered below.
+# Syntax: "ore_name background_block"
+# Examples:
+#   coal_ore stone          → Coal ore spawns in stone
+#   iron_ore sand           → Iron ore spawns in sand
+#   propertyGroup blockGroup → All ores in propertyGroup spawn in blockGroup
 #
-# Some block and property groups have special names. Those are "all" and
-# "default." Using "all" in the place of either will gather all of the respective
-# entries from below and add them to the list dynamically. Using "default" in the
-# place of either will gather all of the entries that are listed *by default*.
+# Special names:
+#   "all"     → All ores and background blocks
+#   "default" → Only default/recommended ores
+#
+# This value uses all ores in all ore property groups, spawning in all stone types
 values = ["all all"]
 
-# Whether to test the block registry for duplicate entries
+# Validate the registry for duplicate ore/background combinations on startup
+# Useful for catching configuration mistakes
 checkForDuplicates = true
 
-# Block groups mapping (dynamic category)
+# ────────────────────────────────────────────────────────────────────────────────
+# Block Groups: Categories of background blocks where ores can spawn
+# ────────────────────────────────────────────────────────────────────────────────
+# Dynamic category - populated automatically with stone types from all mods
+# Examples: stone, andesite, diorite, granite, deepslate, etc.
 [blockRegistry.blockGroups]
-# Default stone groups are configured dynamically
 
-# Property groups mapping (dynamic category)
+# ────────────────────────────────────────────────────────────────────────────────
+# Property Groups: Categories of ores that can spawn together
+# ────────────────────────────────────────────────────────────────────────────────
+# Dynamic category - populated automatically with ore types from all mods
+# Examples: coal, iron, gold, diamond, etc.
 [blockRegistry.propertyGroups]
-# Default ore property groups are configured dynamically
 
 [general]
-# Whether to run transformations on the ore presets for backwards compatibility
+# ────────────────────────────────────────────────────────────────────────────────
+# GENERAL SETTINGS
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Update preset configs when the mod is updated
+# MOD_UPDATED: Apply fixes when OSV version changes (recommended)
+# USER_CONFIGURED: Never auto-update (preserve user customizations)
+# OFF: Never auto-update
 updatePresets = "MOD_UPDATED"
 
-# Whether to forcibly disable dynamic block imitation features to provide
-# better compatibility with some platforms. Note that this feature should
-# get enabled automatically, if needed.
+# Force compatibility mode for platforms with limited block property support
+# Disables: block imitation, dynamic properties, and similar features
+# Usually auto-enabled when needed; only set manually if problems occur
 forceCompatibilityMode = false
 
-# Enable extra startup diagnostics and snapshots in logs
+# Enable detailed startup logging (for debugging)
+# Check your logs folder for startup diagnostics
 debugStartup = false
 
 [blocks]
-# Variants will imitate the properties of their background blocks, such as the
-# ability to fall like sand or sustain leaves. Can be configured on an
-# individual basis in the ore presets.
+# ────────────────────────────────────────────────────────────────────────────────
+# BLOCK BEHAVIOR - How ore variants behave
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Ore variants imitate their background block's properties
+# Examples of imitated properties: falling (sand), sustaining leaves (grass), etc.
+# When disabled: all ore variants behave like stone
 bgImitation = true
 
-# Whether to suppress the ability for background blocks to duplicate themselves.
-# Enabling this may improve gameplay balance by not letting ores spread in the
-# world unexpectedly. Can be configured on an individual basis in the ore presets.
+# Prevent background blocks from duplicating via ore variants
+# Example: sand ores normally create sand when broken; disable to prevent infinite sand
+# Affects: redstone ores, lava ores, water ores, and block spreaders (silverfish, etc.)
 bgDuplication = true
 
-# Whether furnace recipes should be enabled
+# Enable furnace recipes that smelt ore variants into items
 enableFurnaceRecipes = true
 
-# Whether ore variants will drop instead of original counterparts
+# Ore variants drop themselves instead of original ore drops
+# When enabled: mining coal ore in stone drops coal ore (not raw coal)
+# When disabled: coal ore in stone drops raw coal (vanilla behavior)
 variantsDrop = false
 
-# Whether ore variants will drop when using silk touch
+# Ore variants drop when using silk touch enchantment
 variantsDropWithSilkTouch = true
 
-# Whether to allow silverfish to enter into any infested variants
+# Allow silverfish to infest ore variant blocks
+# When enabled: silverfish can enter any infested ore variant
 mapInfestedVariants = true
 
 [tags]
-# Whether to copy any tags at all. Globally toggles the copy feature.
+# ────────────────────────────────────────────────────────────────────────────────
+# TAG COPYING - Apply vanilla tags to ore variants
+# ────────────────────────────────────────────────────────────────────────────────
+# Minecraft uses "tags" to group blocks/items (e.g., "mineable/pickaxe")
+# These tags control behavior: mining speed, tool requirements, drops, etc.
+
+# Master toggle: copy any tags at all
 copyTags = true
 
-# Whether to copy block tags
+# Copy block tags (e.g., "mineable/pickaxe", "needs_diamond_tool")
 copyBlockTags = true
 
-# Whether to copy item tags
+# Copy item tags (for crafting recipes, etc.)
 copyItemTags = true
 
 [denseOres]
-# Whether dense variants are spawned
+# ────────────────────────────────────────────────────────────────────────────────
+# DENSE ORE VARIANTS - Ore clusters with multiple drops
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Enable dense ore variants (bonus ore clusters with more drops)
 enabled = true
 
-# The minimum multiplier for dense ore counts
+# Minimum multiplier for dense ore drops (e.g., 1 = 1x normal drops)
 minMultiplier = 1
 
-# The maximum multiplier for dense ore counts
+# Maximum multiplier for dense ore drops (e.g., 3 = 3x normal drops)
 maxMultiplier = 3
 
-# If true, dense variants drop a random number between min and max multipliers
+# Randomize drop count: drop between min and max multiplier
+# When true: each dense ore drops random 1x-3x amounts
+# When false: dense ore always drops max multiplier (3x)
 randomDropCount = true
 
 [worldGen]
-# Whether ores should spawn according to specific biomes vs. anywhere
+# ────────────────────────────────────────────────────────────────────────────────
+# WORLD GENERATION - Ore spawn behavior
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Ores spawn only in biomes where they naturally occur
+# When disabled: ores can spawn anywhere (e.g., coal ore in deserts)
 biomeSpecific = true
 
-# Whether vanilla spawning of ores should be blocked
+# Disable vanilla ore generation before OSV ores spawn
+# Prevents: duplicates, unwanted vanilla ores mixed with variants
+# Recommended: keep enabled
 autoDisableOres = true
 
-# Whether vanilla spawning of stone variants should be blocked
+# Disable vanilla stone variant generation
+# Recommended: keep enabled
 autoDisableStone = true
 
-# Whether to spawn custom ore variants
+# Enable OSV ore variant generation
+# Set to false to use vanilla ores instead
 enableOSVOres = true
 
-# Whether to spawn stone types with custom variables
+# Enable OSV stone variant generation
+# Set to false to use vanilla stone types instead
 enableOSVStone = true
 
-# Whether to keep worldgen using vanilla-compatible datapack behavior.
-# When disabled, OSV may simplify some foreign settings.
+# Use strict vanilla-compatible datapack worldgen behavior
+# When enabled: complex generation settings preserved (slower, more accurate)
+# When disabled: OSV simplifies some settings (faster, may reduce compatibility)
+# Recommended: false (unless using complex custom worldgen datapacks)
 highAccuracy = false
 
-# Add configured feature IDs to disable spawning for those features
-# Use '/osv debug features' in game to list available IDs
+# List of worldgen feature IDs to disable
+# Find available IDs with: /osv debug features (in-game command)
+# Example: disable Create mod zinc ore if you prefer another variant source
 disabledFeatures = ["create:zinc_ore"]
 
 [modSupport]
-# Mod support toggles (configured dynamically)
-# Default support for various mods will be auto-configured here
+# ────────────────────────────────────────────────────────────────────────────────
+# MOD COMPATIBILITY - Enable/disable variants for specific mods
+# ────────────────────────────────────────────────────────────────────────────────
+# Dynamically populated with installed mods
+# Examples: minecraft, create, quark, biomesoplenty, etc.
+# Set each to false to disable variants from that mod

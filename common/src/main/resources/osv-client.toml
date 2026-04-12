@@ -1,35 +1,89 @@
-# OreStoneVariants Client Configuration
-# Edit this file to customize your client-side experience
+# ╔═══════════════════════════════════════════════════════════════════════════════╗
+# ║                 OreStoneVariants (OSV) - Client Configuration                  ║
+# ║                     Customize your client-side experience                       ║
+# ╚═══════════════════════════════════════════════════════════════════════════════╝
+#
+# This file controls how ore variants are rendered on your client.
+# Changes take effect immediately after reloading resources (F3+T in-game).
 
 [resources]
-# Attempts to generate any new ore sprites from the topmost resource pack.
-# Not an ideal solution for many resource packs.
+# ────────────────────────────────────────────────────────────────────────────────
+# RESOURCE PACK ASSET GENERATION
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Whether to attempt generating ore sprites from your active resource pack
+# When enabled: OSV extracts textures from your topmost resource pack
+# When disabled: OSV uses default textures from its own pack
+# Note: Not all resource packs are compatible; you may see missing textures
 assetsFromRP = true
 
 [models]
-# Indicates whether to enable shading in generated block models
+# ────────────────────────────────────────────────────────────────────────────────
+# BLOCK MODEL RENDERING
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Enable shading (lighting) in generated ore models
+# This adds depth and shadow details to ore blocks
+# Set to false if you prefer flat/simple ore appearance
 overlayShade = true
 
-# Whether textures should be rendered with support for a full range of opacity
-# You may want to disable this if you're using shaders
+# Support for full transparency/alpha in ore textures
+# Allows textures with semi-transparent pixels (e.g., moss, vines on ore)
+# Set to false if you use shaders that conflict with transparency
 overlayTransparency = true
 
-# How much larger the overlay model is than the background model
-# Lower values may look better, but cause z-fighting
+# Scale multiplier for ore overlay relative to background block
+# Range: 1.0 (exact fit) to 2.0 (very enlarged)
+# Higher values show more overlay detail but can cause z-fighting (flickering)
+# Recommended: 1.001 - 1.005 (minimal but visible separation)
 overlayScale = 1.001
 
-# The default type of model to generate for all ores
+# Default model generation style for all ores
+# Options: SINGLE, LAYERED, CUSTOM
+# SINGLE: one texture layer (most compatible, least detailed)
+# LAYERED: multiple layers (better detail, requires good GPU)
+# CUSTOM: user-defined per ore (most control, requires manual config)
 type = "SINGLE"
 
 [textures]
-# Whether textures should use variable opacity to push and pull the background sprite
+# ────────────────────────────────────────────────────────────────────────────────
+# TEXTURE PROCESSING
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Use opacity variation in textures for visual depth
+# The overlay texture can use variable transparency to create shadow/highlight effects
+# Set to false for flat texture appearance
 shadeModifier = true
 
 [blocks]
-# Whether to automatically reload resources after enabling the generated resource pack
-# This may result in fewer missing textures in rare cases
+# ────────────────────────────────────────────────────────────────────────────────
+# GAMEPLAY RENDERING
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Auto-reload resources after enabling/disabling the OSV resource pack
+# When enabled: game automatically reloads textures (may cause brief freeze)
+# When disabled: you must reload manually (F3+T) to see changes
+# Helps reduce missing texture errors in some cases
 autoRefresh = false
 
 [items]
-# Item display formatter configuration (configured via dynamic categories)
-# Default formatters for dense and normal ores
+# ────────────────────────────────────────────────────────────────────────────────
+# ITEM DISPLAY FORMATTING
+# ────────────────────────────────────────────────────────────────────────────────
+# Configure how ore names and ore items display (e.g., "Coal Ore (Stone)")
+#
+# Available properties for each formatter:
+#   text:       The display text template using placeholders:
+#               {fg} = foreground block (the ore), {bg} = background block
+#   color:      Common color name (red, blue, etc.) or hex #RRGGBB
+#   bold:       true/false - bold font
+#   italic:     true/false - italic font
+#   underlined: true/false - underlined text
+#   font:       custom font namespace:id (usually best to leave default)
+#
+# Examples:
+#   text = "{fg} in {bg}" → "Coal Ore in Stone"
+#   text = "{fg} ({bg})" → "Coal Ore (Stone)"
+#   text = "✦ {fg}" (with special characters)
+#
+# NOTE: Formatters are auto-generated and may be overwritten
