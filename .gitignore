@@ -12,3 +12,4 @@ logs/
 *.project
 *.iml
 /.claude
+.worktrees/
