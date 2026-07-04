@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 
 public class BackgroundSupplier implements ArgumentSupplier<String> {
 
-    private static final ResourceLocation ID = new ResourceLocation(Reference.MOD_ID, "background_supplier");
+    private static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "background_supplier");
 
     private static final SuggestionProvider<CommandSourceStack> SUGGESTIONS =
         SuggestionProviders.register(ID, (ctx, builder) -> {

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "io.github.joseetoon.genlib.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "MojangRegistryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8",
+  "refmap": "osv-neoforge.refmap.json"
+}

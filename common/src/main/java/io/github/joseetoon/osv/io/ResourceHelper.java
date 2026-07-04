@@ -2,8 +2,13 @@ package io.github.joseetoon.osv.io;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PathPackResources;
+import net.minecraft.server.packs.PackSelectionConfig;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import org.apache.commons.io.FileUtils;
 import io.github.joseetoon.genlib.io.FileIO;
 import personthecat.fresult.Result;
@@ -25,8 +30,20 @@ import java.util.Optional;
 @UtilityClass
 public class ResourceHelper {
 
+    private static final PackLocationInfo PACK_INFO = new PackLocationInfo(
+        ModFolders.RESOURCE_DIR.getName(),
+        Component.literal(ModFolders.RESOURCE_DIR.getName()),
+        PackSource.BUILT_IN,
+        Optional.empty()
+    );
+
     public static final PackResources RESOURCES =
-        new PathPackResources(ModFolders.RESOURCE_DIR.getName(), ModFolders.RESOURCE_DIR.toPath(), true);
+        new PathPackResources(PACK_INFO, ModFolders.RESOURCE_DIR.toPath());
+    public static final PackSelectionConfig PACK_SELECTION = new PackSelectionConfig(
+        true,
+        Pack.Position.TOP,
+        false
+    );
     private static final String PACK_MCMETA_PATH = "assets/" + Reference.MOD_ID + "/" + PackResources.PACK_META;
     private static final String FALLBACK_PACK_MCMETA = """
         {
@@ -160,5 +177,9 @@ public class ResourceHelper {
     @CheckReturnValue
     public static File file(final String path) {
         return new File(ModFolders.RESOURCE_DIR, path);
+    }
+
+    public static PackResources createPackResources(final PackLocationInfo info) {
+        return new PathPackResources(info, ModFolders.RESOURCE_DIR.toPath());
     }
 }

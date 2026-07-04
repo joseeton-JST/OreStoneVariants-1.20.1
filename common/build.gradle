@@ -1,5 +1,5 @@
 architectury {
-    common("forge")
+    common("neoforge")
 }
 
 loom {
@@ -11,5 +11,7 @@ loom {
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:$loader_version"
     modApi "dev.architectury:architectury:$architectury_version"
-    modCompileOnly "io.github.joseetoon:genlib-forge:$genlib_version"
+    bundle group: "com.github.PersonTheCat", name: "FResult", version: fresult_version
+    bundle group: "com.github.PersonTheCat", name: "FastNoise", version: fastnoise_version
+    bundle group: "com.github.PersonTheCat", name: "hjson-java", version: hjson_version
 }

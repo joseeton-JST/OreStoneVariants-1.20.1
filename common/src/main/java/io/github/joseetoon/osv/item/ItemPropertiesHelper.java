@@ -1,6 +1,7 @@
 package io.github.joseetoon.osv.item;
 
 import lombok.extern.log4j.Log4j2;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
@@ -8,7 +9,6 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 import io.github.joseetoon.genlib.event.registry.CommonRegistries;
-import io.github.joseetoon.osv.mixin.ItemAccessor;
 import io.github.joseetoon.osv.preset.OrePreset;
 import io.github.joseetoon.osv.preset.data.ItemSettings;
 @Log4j2
@@ -30,19 +30,19 @@ public class ItemPropertiesHelper {
     private static boolean getIsFireResistant(final ItemSettings settings, final Item base) {
         final Boolean configured = settings.getIsFireResistant();
         if (configured != null) return configured;
-        return base.isFireResistant();
+        return base.components().has(DataComponents.FIRE_RESISTANT);
     }
 
     private static int getStackSize(final ItemSettings settings, final Item base) {
         final Integer configured = settings.getMaxStackSize();
         if (configured != null) return configured;
-        return base.getMaxStackSize();
+        return base.getDefaultMaxStackSize();
     }
 
     private static Rarity getRarity(final ItemSettings settings, final Item base) {
         final Rarity configured = settings.getRarity();
         if (configured != null) return configured;
-        return ((ItemAccessor) base).getRarity();
+        return base.getDefaultInstance().getRarity();
     }
 
     @Nullable
@@ -56,6 +56,6 @@ public class ItemPropertiesHelper {
     private static FoodProperties getFoodProperties(final ItemSettings settings, final Item base) {
         final FoodProperties configured = settings.getFoodProperties();
         if (configured != null) return configured;
-        return base.getFoodProperties();
+        return base.components().get(DataComponents.FOOD);
     }
 }

@@ -32,11 +32,15 @@ public class InterceptorDispatcher {
         "io.github.joseetoon.osv.world.interceptor.ServerTickInterceptor",
         "io.github.joseetoon.osv.world.interceptor.ClientLevelInterceptor"
     };
-    public static final boolean COMPATIBILITY_MODE = Cfg.forceCompatibilityMode() || !UnsafeUtils.isAvailable();
+    private static final boolean UNSAFE_UNAVAILABLE = !UnsafeUtils.isAvailable();
+
+    public static boolean compatibilityMode() {
+        return Cfg.forceCompatibilityMode() || UNSAFE_UNAVAILABLE;
+    }
 
     public static <L extends LevelAccessor> L intercept(
             final L level, final BlockState state, final Block expected, final @Nullable BlockPos pos) {
-        if (COMPATIBILITY_MODE) {
+        if (compatibilityMode()) {
             return level;
         }
         final L interceptor = get(level);

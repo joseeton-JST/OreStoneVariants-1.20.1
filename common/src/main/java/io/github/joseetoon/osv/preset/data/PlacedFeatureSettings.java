@@ -18,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
 import io.github.joseetoon.genlib.data.BiomePredicate;
 import io.github.joseetoon.genlib.data.DimensionPredicate;
 import io.github.joseetoon.genlib.serialization.CodecUtils;
-import io.github.joseetoon.osv.config.Cfg;
 import io.github.joseetoon.osv.preset.OrePreset;
 import io.github.joseetoon.osv.preset.StonePreset;
 import io.github.joseetoon.osv.world.MappedFeature;
@@ -33,6 +32,8 @@ import java.util.List;
 @Builder
 @FieldNameConstants
 public class PlacedFeatureSettings<FS extends FeatureProvider<?>, DS extends PlacementProvider<?>> {
+
+    private static final double DEFAULT_DENSE_RATIO = 0.09D;
 
     Type type;
     FS config;
@@ -97,7 +98,7 @@ public class PlacedFeatureSettings<FS extends FeatureProvider<?>, DS extends Pla
                 return builder().type(type)
                     .config(ctx.read(type.feature, Fields.config, () -> ctx.readThis(type.feature)))
                     .placement(ctx.read(type.placement, "decorator", () -> ctx.readThis(type.placement)))
-                    .denseRatio(ctx.readDouble(Fields.denseRatio, Cfg::denseChance))
+                    .denseRatio(ctx.readDouble(Fields.denseRatio, () -> DEFAULT_DENSE_RATIO))
                     .biomes(ctx.read(BiomePredicate.CODEC, Fields.biomes, () -> BiomePredicate.ALL_BIOMES))
                     .dimensions(ctx.read(DimensionPredicate.CODEC, Fields.dimensions, () -> DimensionPredicate.ALL_DIMENSIONS))
                     .nested(ctx.read(NestedSettings.LIST, Fields.nested, () -> null))

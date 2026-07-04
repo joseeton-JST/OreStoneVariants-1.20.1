@@ -14,8 +14,8 @@ subprojects {
         minecraft = mc_version
     }
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 
     loom {
         silentMojangMappingsLicense()
@@ -37,11 +37,19 @@ allprojects {
     repositories {
         maven { url = "https://www.cursemaven.com" }
         maven { url = "https://maven.architectury.dev" }
+        maven { url = "https://maven.neoforged.net/releases" }
+        maven { url = "https://jitpack.io" }
         mavenLocal()
         mavenCentral()
     }
 
+    configurations {
+        bundle { transitive = false }
+        implementation.extendsFrom bundle
+    }
+
     dependencies {
+        compileOnly group: "com.github.PersonTheCat", name: "OverwriteValidatorAnnotations", version: "1.4"
         compileOnly group: "org.jetbrains", name: "annotations", version: "24.1.0"
         compileOnly group: "javax.annotation", name: "javax.annotation-api", version: "1.3.2"
         compileOnly group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2"
@@ -72,7 +80,58 @@ allprojects {
         into "$buildDir/src"
     }
 
+    task verifyNoUtf8Bom {
+        def checkedFiles = fileTree(projectDir) {
+            include "src/**/*.java"
+            include "src/**/*.json"
+            include "src/**/*.toml"
+            include "src/**/*.mcmeta"
+        }
+        inputs.files(checkedFiles)
+        doLast {
+            final List<File> bomFiles = []
+            checkedFiles.each { file ->
+                final byte[] bytes = file.bytes
+                if (bytes.length >= 3
+                    && (bytes[0] & 0xFF) == 0xEF
+                    && (bytes[1] & 0xFF) == 0xBB
+                    && (bytes[2] & 0xFF) == 0xBF) {
+                    bomFiles << file
+                }
+            }
+            if (!bomFiles.isEmpty()) {
+                throw new GradleException(
+                    "UTF-8 BOM found in source files:\n" + bomFiles.collect { it.path }.join("\n")
+                )
+            }
+        }
+    }
+
+    task verifyNoUnexpandedTokens {
+        dependsOn processSource, processResources
+        inputs.files(
+            fileTree("$buildDir/src"),
+            fileTree("$buildDir/resources/main")
+        )
+        doLast {
+            final byte[] token = "@MOD_".getBytes("UTF-8")
+            final List<File> tokenFiles = []
+            final FileTree checkedFiles = fileTree("$buildDir/src") + fileTree("$buildDir/resources/main")
+            checkedFiles.each { file ->
+                if (file.isFile() && containsBytes(file.bytes, token)) {
+                    tokenFiles << file
+                }
+            }
+            if (!tokenFiles.isEmpty()) {
+                throw new GradleException(
+                    "Unexpanded @MOD_* token found in processed files:\n" + tokenFiles.collect { it.path }.join("\n")
+                )
+            }
+        }
+    }
+
     compileJava {
+        dependsOn verifyNoUtf8Bom
         source = processSource.outputs
         options.compilerArgs << "-parameters"
     }
@@ -87,7 +146,30 @@ allprojects {
         failFast = true
     }
 
+    check {
+        dependsOn verifyNoUnexpandedTokens
+    }
+
     tasks.withType(JavaCompile) {
         options.encoding = "UTF-8"
     }
+}
+
+static boolean containsBytes(final byte[] haystack, final byte[] needle) {
+    if (needle.length == 0 || haystack.length < needle.length) {
+        return false
+    }
+    for (int i = 0; i <= haystack.length - needle.length; i++) {
+        boolean matched = true
+        for (int j = 0; j < needle.length; j++) {
+            if (haystack[i + j] != needle[j]) {
+                matched = false
+                break
+            }
+        }
+        if (matched) {
+            return true
+        }
+    }
+    return false
 }

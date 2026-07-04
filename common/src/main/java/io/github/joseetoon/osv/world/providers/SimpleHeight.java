@@ -18,7 +18,8 @@ public class SimpleHeight extends HeightProvider implements CommonHeightAccessor
     public static final Codec<SimpleHeight> CODEC =
         Range.CODEC.xmap(r -> new SimpleHeight(r.min, r.max), p -> new Range(p.min, p.max));
 
-    public static final HeightProviderType<?> TYPE = () -> CodecUtils.asParent(CODEC);
+    public static final HeightProviderType<?> TYPE =
+        () -> com.mojang.serialization.MapCodec.assumeMapUnsafe(CodecUtils.asParent(CODEC));
 
     public final int min;
     public final int max;

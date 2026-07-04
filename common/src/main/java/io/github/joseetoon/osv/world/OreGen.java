@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Log4j2
 public class OreGen {
@@ -45,6 +46,7 @@ public class OreGen {
     private static final PlacedFeature PASSIVE_SWAP = new PlacedFeature(
         Holder.direct(new ConfiguredFeature<>(PassiveOreSwapFeature.INSTANCE, new NoneFeatureConfiguration())),
         List.of());
+    private static final AtomicLong DEBUG_BIOMES = new AtomicLong();
 
     private static final SafeRegistry<ResourceLocation, PlacedFeature> DISABLED_FEATURES =
         SafeRegistry.of(OreGen::loadDisabledFeatures)
@@ -75,7 +77,7 @@ public class OreGen {
 
         DISABLED_FEATURES.forEach((id, feature) -> ctx.removeFeature(id));
         for (final String id : Cfg.disabledFeatures()) {
-            ctx.removeFeature(new ResourceLocation(id));
+            ctx.removeFeature(ResourceLocation.parse(id));
         }
         ENABLED_STONES.forEach((id, feature) -> {
             if (feature.getBiomes().test(ctx.getBiome())) {
@@ -87,13 +89,23 @@ public class OreGen {
                 ctx.addFeature(GenerationStep.Decoration.TOP_LAYER_MODIFICATION, feature.getFeature());
             }
         });
-        // Passive swap: scans every chunk and replaces vanilla ores with OSV variants
-        // based on the surrounding stone type. Runs once per biome entry.
         if (Cfg.enableOSVOres()) {
-            ctx.addFeature(GenerationStep.Decoration.TOP_LAYER_MODIFICATION, PASSIVE_SWAP);
+            addPassiveSwapFeature(ctx);
         }
         GLOBAL_STONES.forEach((id, carver) -> ctx.addCarver(GenerationStep.Carving.LIQUID, carver));
         GLOBAL_ORES.forEach((id, carver) -> ctx.addCarver(GenerationStep.Carving.LIQUID, carver));
+    }
+
+    static void addPassiveSwapFeature(final FeatureModificationContext ctx) {
+        // Passive swap: scans every chunk and replaces vanilla ores with OSV variants
+        // based on the surrounding stone type. Runs once per biome entry.
+        ctx.addFeature(GenerationStep.Decoration.TOP_LAYER_MODIFICATION, PASSIVE_SWAP);
+        if (Cfg.debugStartup() && log.isDebugEnabled()) {
+            final long sample = DEBUG_BIOMES.incrementAndGet();
+            if (sample <= 8L || sample % 64L == 0L) {
+                log.debug("OreGen added passive swap biome modifier entry for biome={} sample={}", ctx.getName(), sample);
+            }
+        }
     }
 
     public static void onWorldClosed() {
@@ -175,6 +187,9 @@ public class OreGen {
 
     private static void addOreFeatures(final Map<ResourceLocation, MappedFeature> features) {
         for (final OrePreset preset : ModRegistries.ORE_PRESETS) {
+            if (!preset.getGen().isEnabled()) {
+                continue;
+            }
             for (final PlacedFeatureSettings<?, ?> cfg : preset.getFeatures()) {
                 if (!cfg.isGlobal()) {
                     final ResourceLocation id = randId("ore_");
@@ -219,6 +234,9 @@ public class OreGen {
     private static void addGlobalOres(final Map<ResourceLocation, ConfiguredWorldCarver<?>> features) {
         final MultiValueMap<GlobalFeature<?>, FeatureStem> globalConfigs = new MultiValueHashMap<>();
         for (final OrePreset preset : ModRegistries.ORE_PRESETS) {
+            if (!preset.getGen().isEnabled()) {
+                continue;
+            }
             for (final PlacedFeatureSettings<?, ?> cfg : preset.getFeatures()) {
                 if (cfg.isGlobal()) {
                     final GlobalFeatureProvider<?> provider = (GlobalFeatureProvider<?>) cfg.getConfig();
@@ -252,6 +270,6 @@ public class OreGen {
     }
 
     private static ResourceLocation randId(final String prefix) {
-        return new ResourceLocation(Reference.MOD_ID, prefix + LibStringUtils.randId(8));
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, prefix + LibStringUtils.randId(8));
     }
 }

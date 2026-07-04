@@ -19,30 +19,39 @@ import static io.github.joseetoon.genlib.serialization.CodecUtils.easySet;
 
 public class BlockSetRuleTest extends RuleTest {
 
+    private static final ResourceLocation TYPE_ID =
+        ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "block_set_rule_test");
+
     public static final Codec<BlockSetRuleTest> CODEC = easySet(EasyStateCodec.INSTANCE)
         .xmap(BlockSetRuleTest::new, rule -> rule.blocks);
 
-    // BuiltInRegistries.RULE_TEST is remapped to f_256978_ and Registry.register to m_122965_
-    // in the SRG production jar, but Loom fails to remap our calls. Use reflection as a fallback.
-    public static final RuleTestType<BlockSetRuleTest> INSTANCE = registerRuleTestType();
+    private static final RuleTestType<BlockSetRuleTest> FALLBACK_TYPE =
+        () -> com.mojang.serialization.MapCodec.assumeMapUnsafe(CODEC);
+
+    private static volatile RuleTestType<BlockSetRuleTest> instance;
+
+    public static void ensureRegistered() {
+        getInstance();
+    }
 
     @SuppressWarnings("unchecked")
     private static RuleTestType<BlockSetRuleTest> registerRuleTestType() {
-        final ResourceLocation id = new ResourceLocation(Reference.MOD_ID, "block_set_rule_test");
-        final RuleTestType<BlockSetRuleTest> type = () -> CODEC;
-        // Try Mojang name (dev env), then SRG name (prod env)
+        final RuleTestType<BlockSetRuleTest> type = FALLBACK_TYPE;
         for (final String fieldName : new String[] { "RULE_TEST", "f_256978_" }) {
             try {
                 final java.lang.reflect.Field f = net.minecraft.core.registries.BuiltInRegistries.class.getDeclaredField(fieldName);
                 f.setAccessible(true);
                 final Registry<RuleTestType<?>> reg = (Registry<RuleTestType<?>>) f.get(null);
-                // Registry.register(Registry, ResourceLocation, Object) — try Mojang then SRG
                 for (final String methodName : new String[] { "register", "m_122965_" }) {
                     try {
-                        final java.lang.reflect.Method m = Registry.class.getMethod(methodName, Registry.class, ResourceLocation.class, Object.class);
-                        return (RuleTestType<BlockSetRuleTest>) m.invoke(null, reg, id, type);
+                        final java.lang.reflect.Method m =
+                            Registry.class.getMethod(methodName, Registry.class, ResourceLocation.class, Object.class);
+                        return (RuleTestType<BlockSetRuleTest>) m.invoke(null, reg, TYPE_ID, type);
                     } catch (final NoSuchMethodException ignored) {
                     } catch (final java.lang.reflect.InvocationTargetException | IllegalAccessException e) {
+                        if (isFrozenRegistry(e)) {
+                            return FALLBACK_TYPE;
+                        }
                         throw new RuntimeException(e);
                     }
                 }
@@ -55,7 +64,32 @@ public class BlockSetRuleTest extends RuleTest {
         throw new RuntimeException("Could not find BuiltInRegistries.RULE_TEST (tried 'RULE_TEST' and 'f_256978_')");
     }
 
-    // Blocks.STONE (f_50069_) and Block.defaultBlockState() (m_49966_) are not remapped by Loom.
+    private static boolean isFrozenRegistry(final Throwable error) {
+        Throwable cause = error;
+        while (cause != null) {
+            if (cause instanceof IllegalStateException && cause.getMessage() != null
+                && cause.getMessage().contains("already frozen")) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
+
+    private static RuleTestType<BlockSetRuleTest> getInstance() {
+        RuleTestType<BlockSetRuleTest> current = instance;
+        if (current == null) {
+            synchronized (BlockSetRuleTest.class) {
+                current = instance;
+                if (current == null) {
+                    current = registerRuleTestType();
+                    instance = current;
+                }
+            }
+        }
+        return current;
+    }
+
     public static final BlockSetRuleTest STONE_ONLY =
         new BlockSetRuleTest(Collections.singleton(getStoneState()));
 
@@ -100,6 +134,6 @@ public class BlockSetRuleTest extends RuleTest {
 
     @Override
     protected RuleTestType<?> getType() {
-        return INSTANCE;
+        return getInstance();
     }
 }

@@ -17,7 +17,8 @@ public class DimensionPlacementModifier extends PlacementModifier {
     public static final Codec<DimensionPlacementModifier> CODEC =
         DimensionPredicate.CODEC.xmap(DimensionPlacementModifier::new, m -> m.predicate);
 
-    public static final PlacementModifierType<DimensionPlacementModifier> TYPE = () -> CODEC;
+    public static final PlacementModifierType<DimensionPlacementModifier> TYPE =
+        () -> com.mojang.serialization.MapCodec.assumeMapUnsafe(CODEC);
 
     private final DimensionPredicate predicate;
 

@@ -26,7 +26,7 @@ import java.util.function.BiConsumer;
 
 public interface ModelGenerator {
 
-    ResourceLocation ITEM_GENERATED = new ResourceLocation("item/generated");
+    ResourceLocation ITEM_GENERATED = ResourceLocation.parse("minecraft:item/generated");
 
     default void generateModels(VariantDescriptor cfg, String path, BiConsumer<String, JsonObject> writer) {
         final JsonObject variants = new JsonObject();
@@ -58,7 +58,7 @@ public interface ModelGenerator {
 
     default ResourceLocation generateBlockId(ModelWrapper original, ResourceLocation overlay) {
         final String path = overlay.getPath() + "_" + this.createPrefix(original.getId());
-        return new ResourceLocation(Reference.MOD_ID, path);
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
     }
 
     default JsonArray generateVariants(List<ModelWrapper> generated) {
@@ -103,7 +103,7 @@ public interface ModelGenerator {
     default boolean isSpecialItem(JsonObject item) {
         final String parent = JsonCompat.getOptional(item, "parent", JsonValue::asString).orElse(null);
         if (parent != null) {
-            return ITEM_GENERATED.equals(new ResourceLocation(parent));
+            return ITEM_GENERATED.equals(ResourceLocation.parse(parent));
         }
         return false;
     }
@@ -119,7 +119,7 @@ public interface ModelGenerator {
             final String affix = cfg.getForeground().getItemVariants().getExactly(variant);
             if (affix != null && !affix.isEmpty()) {
                 final String texturePath = PathUtils.appendFilename(primary.getPath(), "_" + Modifier.format(modifiers));
-                final JsonObject model = this.generateLayeredItem(layers, new ResourceLocation(Reference.MOD_ID, texturePath));
+                final JsonObject model = this.generateLayeredItem(layers, ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, texturePath));
                 writer.accept(PathUtils.prependFilename(path, affix + "_"), model);
             }
         });
@@ -144,7 +144,7 @@ public interface ModelGenerator {
         int layerNumber = 0;
 
         for (final Map.Entry<String, String> layer : layers.entrySet()) {
-            final ResourceLocation bg = new ResourceLocation(layer.getValue());
+            final ResourceLocation bg = ResourceLocation.parse(layer.getValue());
             final ResourceLocation single = TextureHandler.generateSingleLayer(bg, fg);
             if (single != null) {
                 textures.add(this.getLayerKey(layer.getKey(), layerNumber), single.toString());
@@ -194,8 +194,8 @@ public interface ModelGenerator {
         if (parent == null) return null;
 
         final String prefix = cfg.getForeground().getPrimaryModel().getPath();
-        final String equivalent = prefix + "_" + this.createPrefix(new ResourceLocation(parent));
-        final ResourceLocation id = new ResourceLocation(Reference.MOD_ID, equivalent);
+        final String equivalent = prefix + "_" + this.createPrefix(ResourceLocation.parse(parent));
+        final ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, equivalent);
         final String path = PathUtils.asModelPath(id);
 
         if (ClientResourceHelper.hasResource(path)) {

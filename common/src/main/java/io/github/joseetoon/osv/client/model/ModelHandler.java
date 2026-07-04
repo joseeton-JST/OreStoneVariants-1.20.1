@@ -173,13 +173,20 @@ public class ModelHandler {
      */
     private static void runGenerator(final String blockStatePath, final VariantDescriptor variant) {
         final ModelSettings cfg = variant.getForeground().getModel();
-        final ModelGenerator gen = cfg.getType().getGenerator();
+        final ModelGenerator gen = createGenerator(cfg.getType());
 
         try {
             gen.generateModels(variant, blockStatePath, ModelHandler::writeModel);
         } catch (final RuntimeException e) {
             LibErrorContext.error(Reference.MOD, new GenericFormattedException(e));
         }
+    }
+
+    private static ModelGenerator createGenerator(final ModelSettings.Type type) {
+        return switch (type) {
+            case SINGLE -> new SingleLayerModelGenerator();
+            case OVERLAY -> new OverlayModelGenerator();
+        };
     }
 
     /**

@@ -13,3 +13,4 @@ logs/
 *.iml
 /.claude
 .worktrees/
+test-artifacts/

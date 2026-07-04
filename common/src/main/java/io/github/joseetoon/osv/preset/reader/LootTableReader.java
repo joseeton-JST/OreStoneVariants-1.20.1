@@ -18,7 +18,7 @@ public class LootTableReader {
     public static Result<LootTable, InvalidPresetArgumentException> read(final Dynamic<?> config) {
         try {
             final String path = "dynamic_loot/" + LibStringUtils.randId(16);
-            final ResourceLocation id = new ResourceLocation(Reference.MOD_ID, path);
+            final ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, path);
             final JsonElement gson = config.convert(JsonOps.INSTANCE).getValue();
             final LootTable table = loadWithHooks(id, gson);
 

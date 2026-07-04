@@ -58,7 +58,7 @@ public class Group {
     }
 
     public ResourceLocation asId() {
-        return new ResourceLocation(this.name);
+        return ResourceLocation.parse(this.name);
     }
 
     public Collection<String> filenames() {
@@ -70,9 +70,9 @@ public class Group {
 
     public Collection<ResourceLocation> ids() {
         if (this.implicitNamespace) {
-            return this.map(value -> new ResourceLocation(this.name, value));
+            return this.map(value -> ResourceLocation.fromNamespaceAndPath(this.name, value));
         }
-        return this.map(ResourceLocation::new);
+        return this.map(ResourceLocation::parse);
     }
 
     public Collection<String> formatted() {

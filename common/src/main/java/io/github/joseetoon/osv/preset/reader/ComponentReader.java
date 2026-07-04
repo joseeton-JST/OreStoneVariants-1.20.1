@@ -1,10 +1,10 @@
 package io.github.joseetoon.osv.preset.reader;
 
-import com.google.common.collect.ImmutableMap;
 import com.mojang.serialization.Codec;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,17 +14,17 @@ public class ComponentReader {
     public static final Codec<Component> CODEC =
         Codec.STRING.xmap(ComponentReader::translateAny, Component::getString);
 
-    public static final Map<String, Object> DEFAULT_DENSE =
-        ImmutableMap.<String, Object>builder()
-            .put("text", "{osv.denseKey} {fg} ({bg})")
-            .build();
+    public static final Map<String, Object> DEFAULT_DENSE = defaultFormatter("{osv.denseKey} {fg} ({bg})");
 
-    public static final Map<String, Object> DEFAULT_NORMAL =
-        ImmutableMap.<String, Object>builder()
-            .put("text", "{fg} ({bg})")
-            .build();
+    public static final Map<String, Object> DEFAULT_NORMAL = defaultFormatter("{fg} ({bg})");
 
     private static final Pattern KEY_PATTERN = Pattern.compile("(?<!\\\\)\\{([^}]+)}");
+
+    private static Map<String, Object> defaultFormatter(final String text) {
+        final Map<String, Object> formatter = new LinkedHashMap<>();
+        formatter.put("text", text);
+        return formatter;
+    }
 
     public static Component fromRaw(final Map<?, ?> raw) {
         // Store the raw text as a literal so that {fg}/{bg} placeholders survive

@@ -8,9 +8,9 @@ import java.util.Optional;
 
 public class BackgroundSelector {
 
-    public static final ResourceLocation STONE_ID = new ResourceLocation("block/stone");
-    public static final ResourceLocation NETHERRACK_ID = new ResourceLocation("block/netherrack");
-    public static final ResourceLocation END_STONE_ID = new ResourceLocation("block/end_stone");
+    public static final ResourceLocation STONE_ID = ResourceLocation.withDefaultNamespace("block/stone");
+    public static final ResourceLocation NETHERRACK_ID = ResourceLocation.withDefaultNamespace("block/netherrack");
+    public static final ResourceLocation END_STONE_ID = ResourceLocation.withDefaultNamespace("block/end_stone");
 
     private static final Color[][] STONE = loadRequired(STONE_ID);
     private static final Color[][] NETHERRACK = loadRequired(NETHERRACK_ID);

@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "io.github.joseetoon.osv.mixin.forge",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8",
+  "refmap": "osv-neoforge.refmap.json"
+}

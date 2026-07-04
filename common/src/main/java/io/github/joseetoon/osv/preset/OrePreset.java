@@ -106,7 +106,7 @@ public class OrePreset {
 
     Lazy<ResourceLocation> oreId = Lazy.of(() -> {
         final ResourceLocation original = getVariant().getOriginal();
-        return original != null ? original : new ResourceLocation(this.getMod(), this.getName());
+        return original != null ? original : ResourceLocation.fromNamespaceAndPath(this.getMod(), this.getName());
     });
 
     Lazy<ResourceLocation> backgroundTexture = Lazy.of(() -> {
@@ -166,7 +166,7 @@ public class OrePreset {
 
             for (final ResourceLocation id : ids) {
                 final String path = affix.isEmpty() ? id.getPath() : id.getPath() + "_" + affix;
-                modified.add(new ResourceLocation(id.getNamespace(), path));
+                modified.add(ResourceLocation.fromNamespaceAndPath(id.getNamespace(), path));
             }
             map.put(key, modified);
         });
@@ -261,7 +261,7 @@ public class OrePreset {
                 final String mod = Optional.ofNullable(settings.getVariant().getOriginal())
                     .map(ResourceLocation::getNamespace).orElse(Reference.MOD_ID);
 
-                return Optional.of(new OrePreset(settings, new ResourceLocation(mod, noExtension(file)), file, json));
+                return Optional.of(new OrePreset(settings, ResourceLocation.fromNamespaceAndPath(mod, noExtension(file)), file, json));
             } catch (final RuntimeException e) {
                 throw new InvalidPresetArgumentException(ModFolders.ORE_DIR, file, e);
             }
@@ -292,7 +292,7 @@ public class OrePreset {
     private static String readMod(final JsonObject json) {
         return JsonCompat.getOptional(json, OreSettings.Fields.variant, JsonValue::asObject)
             .flatMap(ore -> JsonCompat.getOptional(ore, VariantSettings.Fields.original,
-                v -> new ResourceLocation(v.asString())))
+                v -> ResourceLocation.parse(v.asString())))
             .map(ResourceLocation::getNamespace)
             .orElse(Reference.MOD_ID);
     }

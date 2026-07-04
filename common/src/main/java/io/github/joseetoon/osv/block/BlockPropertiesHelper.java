@@ -1,6 +1,8 @@
 package io.github.joseetoon.osv.block;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -10,6 +12,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour.StatePredicate;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.storage.loot.LootTable;
 import io.github.joseetoon.osv.mixin.BlockBehaviourAccessor;
 import io.github.joseetoon.osv.mixin.BlockPropertiesAccessor;
 import io.github.joseetoon.osv.preset.OrePreset;
@@ -24,7 +27,7 @@ import java.util.function.ToIntFunction;
 public class BlockPropertiesHelper {
 
     public static Properties merge(final OrePreset preset, final Block bg, final Block fg) {
-        final Properties merged = Properties.copy(fg);
+        final Properties merged = Properties.ofFullCopy(fg);
         final Context ctx = new Context(preset, bg, fg);
 
         final BlockPropertiesAccessor accessor = (BlockPropertiesAccessor) merged;
@@ -179,9 +182,9 @@ public class BlockPropertiesHelper {
             return this.fgp.getJumpFactor();
         }
 
-        ResourceLocation drops() {
+        ResourceKey<LootTable> drops() {
             final ResourceLocation loot = this.preset.getLootReference();
-            return loot != null ? loot : this.fgp.getDrops();
+            return loot != null ? ResourceKey.create(Registries.LOOT_TABLE, loot) : this.fgp.getDrops();
         }
 
         boolean canOcclude() {

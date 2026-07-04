@@ -11,13 +11,13 @@ public class VariantNamingService {
         final String fgFormat = formatFg(foreground);
         final String bgFormat = formatBg(background);
         if (bgFormat.isEmpty()) {
-            return new ResourceLocation(Reference.MOD_ID, fgFormat);
+            return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fgFormat);
         }
-        return new ResourceLocation(Reference.MOD_ID, fgFormat + "_" + bgFormat);
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, fgFormat + "_" + bgFormat);
     }
 
     public static String formatFg(final String foreground) {
-        return formatFg(new ResourceLocation(foreground));
+        return formatFg(ResourceLocation.parse(foreground));
     }
 
     public static String formatFg(final ResourceLocation foreground) {

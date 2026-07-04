@@ -158,7 +158,7 @@ public class BlockList {
     private static void simplifyBlocks(final List<String> blocks) {
         for (final Group group : ModRegistries.BLOCK_GROUPS) {
             if (!group.isMetaGroup()) {
-                substitute(blocks, group.map(id -> new ResourceLocation(id).toString()), group.getName());
+                substitute(blocks, group.map(id -> ResourceLocation.parse(id).toString()), group.getName());
             }
         }
         if (!substitute(blocks, getAllGroups(ModRegistries.BLOCK_GROUPS), Group.ALL)) {

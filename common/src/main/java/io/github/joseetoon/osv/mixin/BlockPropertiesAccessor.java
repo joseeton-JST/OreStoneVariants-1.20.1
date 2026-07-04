@@ -1,12 +1,13 @@
 package io.github.joseetoon.osv.mixin;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.storage.loot.LootTable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -83,10 +84,10 @@ public interface BlockPropertiesAccessor {
     void setJumpFactor(final float factor);
 
     @Accessor
-    ResourceLocation getDrops();
+    ResourceKey<LootTable> getDrops();
 
     @Accessor
-    void setDrops(final ResourceLocation id);
+    void setDrops(final ResourceKey<LootTable> id);
 
     @Accessor
     boolean getCanOcclude();

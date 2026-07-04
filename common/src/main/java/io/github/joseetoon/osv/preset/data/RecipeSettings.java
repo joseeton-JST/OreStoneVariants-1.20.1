@@ -51,7 +51,7 @@ public class RecipeSettings implements DynamicSerializable<RecipeSettings> {
 
     public static final String NONE_KEY = "NONE";
 
-    public static final RecipeSettings NONE = new RecipeSettings(new ResourceLocation("air"), null, null, null, 0);
+    public static final RecipeSettings NONE = new RecipeSettings(ResourceLocation.parse("minecraft:air"), null, null, null, 0);
 
     private static Function<String, DataResult<String>> NONE_VALIDATOR =
         s -> s.equalsIgnoreCase(NONE_KEY) ? DataResult.success(s) : DataResult.error(() -> "Unknown constant");
@@ -116,7 +116,6 @@ public class RecipeSettings implements DynamicSerializable<RecipeSettings> {
 
         public AbstractCookingRecipe getRecipe(final ResourceLocation inputId, final VariantItem input, final boolean blasting) {
             final String affix = blasting ? "blasting" : "smelting";
-            final ResourceLocation id = new ResourceLocation(Reference.MOD_ID, inputId.getPath() + "_" + affix);
             final Ingredient ingredient = Ingredient.of(input);
             int quantity = this.count;
             if (AdditionalProperties.isDense(input.getState())) {
@@ -127,9 +126,9 @@ public class RecipeSettings implements DynamicSerializable<RecipeSettings> {
             final int time = Math.max(1, this.time) / (blasting ? 2 : 1);
 
             if (blasting) {
-                return new BlastingRecipe(id, this.group, CookingBookCategory.MISC, ingredient, result, xp, time);
+                return new BlastingRecipe(this.group, CookingBookCategory.MISC, ingredient, result, xp, time);
             } else {
-                return new SmeltingRecipe(id, this.group, CookingBookCategory.MISC, ingredient, result, xp, time);
+                return new SmeltingRecipe(this.group, CookingBookCategory.MISC, ingredient, result, xp, time);
             }
         }
     }

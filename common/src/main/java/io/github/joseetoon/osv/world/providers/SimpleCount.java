@@ -15,7 +15,8 @@ public class SimpleCount extends IntProvider {
     public static final Codec<SimpleCount> CODEC =
         Range.CODEC.xmap(r -> new SimpleCount(r.min, r.max), p -> new Range(p.min, p.max));
 
-    public static final IntProviderType<?> TYPE = () -> CodecUtils.asParent(CODEC);
+    public static final IntProviderType<?> TYPE =
+        () -> com.mojang.serialization.MapCodec.assumeMapUnsafe(CodecUtils.asParent(CODEC));
 
     public final int min;
     public final int max;

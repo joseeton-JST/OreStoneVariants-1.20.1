@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 
 public class OrePresetSupplier implements ArgumentSupplier<String> {
 
-    private static final ResourceLocation ID = new ResourceLocation(Reference.MOD_ID, "ore_preset_supplier");
+    private static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, "ore_preset_supplier");
 
     private static final SuggestionProvider<CommandSourceStack> SUGGESTIONS =
         SuggestionProviders.register(ID, (ctx, builder) -> {

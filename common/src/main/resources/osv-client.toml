@@ -86,4 +86,6 @@ autoRefresh = false
 #   text = "{fg} ({bg})" → "Coal Ore (Stone)"
 #   text = "✦ {fg}" (with special characters)
 #
-# NOTE: Formatters are auto-generated and may be overwritten
+# Item formatters moved to the dedicated file below
+# Edit that file to customize ore item names
+formattersFile = "osv-client-formatters.toml"

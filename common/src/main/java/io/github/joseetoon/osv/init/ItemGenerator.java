@@ -27,7 +27,7 @@ public class ItemGenerator {
                 log.info("Overriding default variant item to {} for {}", state, descriptor);
                 items.put(id, descriptor.generateItem(state, resolved));
             } else {
-                final ResourceLocation nid = new ResourceLocation(RlUtils.ns(id), affix + "_" + RlUtils.path(id));
+                final ResourceLocation nid = ResourceLocation.fromNamespaceAndPath(RlUtils.ns(id), affix + "_" + RlUtils.path(id));
                 items.put(nid, descriptor.generateItem(state, resolved));
             }
         });

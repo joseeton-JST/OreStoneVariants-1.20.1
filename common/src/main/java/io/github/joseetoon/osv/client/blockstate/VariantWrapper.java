@@ -17,7 +17,7 @@ public class VariantWrapper {
         final JsonValue model = definition.get("model");
         if (model != null && model.isString()) {
             definition.remove("model");
-            return Optional.of(new VariantWrapper(new ResourceLocation(model.asString()), definition));
+            return Optional.of(new VariantWrapper(ResourceLocation.parse(model.asString()), definition));
         }
         return Optional.empty();
     }

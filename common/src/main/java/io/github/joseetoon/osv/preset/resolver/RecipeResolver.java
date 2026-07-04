@@ -3,6 +3,7 @@ package io.github.joseetoon.osv.preset.resolver;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
@@ -28,7 +29,8 @@ public final class RecipeResolver {
 
     @Nullable
     private static SmeltingRecipe getRecipe(final RecipeManager recipes, final Item item) {
-        for (final SmeltingRecipe recipe : recipes.getAllRecipesFor(RecipeType.SMELTING)) {
+        for (final RecipeHolder<SmeltingRecipe> holder : recipes.getAllRecipesFor(RecipeType.SMELTING)) {
+            final SmeltingRecipe recipe = holder.value();
             for (final Ingredient ingredient : recipe.getIngredients()) {
                 if (ingredient.test(new ItemStack(item))) {
                     return recipe;

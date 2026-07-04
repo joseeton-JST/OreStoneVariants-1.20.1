@@ -31,7 +31,8 @@ public class FlexiblePlacementModifier extends PlacementModifier {
         FlexiblePlacementModifier::new
     );
 
-    public static final PlacementModifierType<FlexiblePlacementModifier> TYPE = () -> CODEC;
+    public static final PlacementModifierType<FlexiblePlacementModifier> TYPE =
+        () -> com.mojang.serialization.MapCodec.assumeMapUnsafe(CODEC);
 
     public final IntProvider count;
     public final HeightProvider height;

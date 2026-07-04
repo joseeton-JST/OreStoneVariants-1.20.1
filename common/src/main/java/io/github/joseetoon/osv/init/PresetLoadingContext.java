@@ -83,7 +83,7 @@ public class PresetLoadingContext {
     }
 
     private static Optional<OrePreset> createOre(final String path) {
-        final ResourceLocation asId = new ResourceLocation(path);
+        final ResourceLocation asId = ResourceLocation.parse(path);
 
         // Skip ores whose source block is not in the registry (mod not installed).
         // OSV's own custom ores (namespace == MOD_ID) are exempt from this check.

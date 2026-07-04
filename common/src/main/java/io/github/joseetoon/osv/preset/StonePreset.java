@@ -58,7 +58,7 @@ public class StonePreset {
             try {
                 final StoneSettings settings = HjsonUtils.readThrowing(StoneSettings.CODEC, json);
                 final ResourceLocation stone = CommonRegistries.BLOCKS.getKey(settings.getStone().getBlock());
-                final ResourceLocation id = new ResourceLocation(Objects.requireNonNull(stone).getNamespace(), noExtension(file));
+                final ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Objects.requireNonNull(stone).getNamespace(), noExtension(file));
                 return Optional.of(new StonePreset(settings, id, file, json));
             } catch (final RuntimeException e) {
                 throw new InvalidPresetArgumentException(ModFolders.STONE_DIR, file, e);

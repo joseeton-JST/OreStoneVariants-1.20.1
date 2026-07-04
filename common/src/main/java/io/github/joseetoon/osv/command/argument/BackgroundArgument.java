@@ -41,7 +41,7 @@ public class BackgroundArgument implements ArgumentType<Group> {
         final Group group = ModRegistries.BLOCK_GROUPS.get(name);
         if (group != null) {
             return group;
-        } else if (CommonRegistries.BLOCKS.isRegistered(new ResourceLocation(name))) {
+        } else if (CommonRegistries.BLOCKS.isRegistered(ResourceLocation.parse(name))) {
             return Group.synthetic(name);
         }
         throw cmdSyntax(reader, "No such group or block");

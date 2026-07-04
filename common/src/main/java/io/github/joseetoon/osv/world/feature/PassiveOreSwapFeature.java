@@ -122,7 +122,7 @@ public class PassiveOreSwapFeature extends Feature<NoneFeatureConfiguration> {
         if (id == null || id.getPath().startsWith("deepslate_")) {
             return null;
         }
-        final ResourceLocation aliasId = new ResourceLocation(id.getNamespace(), "deepslate_" + id.getPath());
+        final ResourceLocation aliasId = ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "deepslate_" + id.getPath());
         if (!BuiltInRegistries.BLOCK.containsKey(aliasId)) {
             return null;
         }

@@ -156,7 +156,7 @@ public class TextureHandler {
 
     private static ResourceLocation createId(final ResourceLocation bg, final ResourceLocation fg) {
         final String newPath = RlUtils.path(fg) + "_" + createPrefix(bg);
-        return new ResourceLocation(Reference.MOD_ID, newPath);
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, newPath);
     }
 
     private static String createPrefix(final ResourceLocation id) {

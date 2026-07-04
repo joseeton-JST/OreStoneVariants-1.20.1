@@ -32,7 +32,7 @@ public class WorldGenRegionInterceptor extends WorldGenRegion implements Interce
 
     @SuppressWarnings("ConstantConditions")
     private WorldGenRegionInterceptor() {
-        super(null, null, null, 0);
+        super(null, null, null, null);
         throw new UnsupportedOperationException("Illegal constructor access");
     }
 

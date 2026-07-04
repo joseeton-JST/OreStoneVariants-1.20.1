@@ -28,7 +28,7 @@ public class FlexibleVariantDecorator extends PlacementModifier {
     );
 
     public static final PlacementModifierType<FlexibleVariantDecorator> TYPE =
-        () -> CODEC;
+        () -> com.mojang.serialization.MapCodec.assumeMapUnsafe(CODEC);
 
     private final Range count;
     private final Range height;

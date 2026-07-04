@@ -47,7 +47,7 @@ public class ModelLoader {
     private static JsonObject resolveCompletely(final JsonObject model) throws ModelResolutionException {
         final JsonValue parentValue = model.get("parent");
         if (parentValue != null) {
-            final ResourceLocation id = new ResourceLocation(parentValue.asString());
+            final ResourceLocation id = ResourceLocation.parse(parentValue.asString());
             final JsonObject parentObject = resolveCompletely(getModelDefinition(id));
             copyRecursively(model, parentObject);
             return parentObject;

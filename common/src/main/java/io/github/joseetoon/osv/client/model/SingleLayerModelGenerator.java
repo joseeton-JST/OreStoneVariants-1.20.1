@@ -16,7 +16,7 @@ public class SingleLayerModelGenerator implements ModelGenerator {
             if (texture.startsWith("#")) {
                 newTextures.add(member.getName(), texture);
             } else {
-                final ResourceLocation bg = new ResourceLocation(texture);
+                final ResourceLocation bg = ResourceLocation.parse(texture);
                 ResourceLocation id = TextureHandler.generateSingleLayer(bg, overlay);
                 if (id != null) {
                     newTextures.add(member.getName(), id.toString());

@@ -7,10 +7,12 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -52,6 +54,7 @@ import io.github.joseetoon.genlib.util.Shorthand;
 import io.github.joseetoon.osv.ModRegistries;
 import io.github.joseetoon.osv.config.Cfg;
 import io.github.joseetoon.osv.item.VariantItem;
+import io.github.joseetoon.osv.mixin.BlockBehaviourInvoker;
 import io.github.joseetoon.osv.mixin.UseOnContextAccessor;
 import io.github.joseetoon.osv.preset.OrePreset;
 import io.github.joseetoon.osv.world.interceptor.InterceptorAccessor;
@@ -132,6 +135,14 @@ public class OreVariant extends SharedStateBlock {
         return InterceptorDispatcher.intercept(level, actual, in, pos);
     }
 
+    private BlockBehaviourInvoker bgi() {
+        return (BlockBehaviourInvoker) this.bg;
+    }
+
+    private BlockBehaviourInvoker fgi() {
+        return (BlockBehaviourInvoker) this.fg;
+    }
+
     private Predicate<BlockState> optimizeTickBehavior() {
         if (this.isRandomlyTicking) {
             return s -> true;
@@ -140,7 +151,7 @@ public class OreVariant extends SharedStateBlock {
         int numTicking = 0;
         for (final BlockState state : this.stateDefinition.getPossibleStates()) {
             final boolean ticking =
-                this.bg.isRandomlyTicking(this.asBg(state)) || this.fg.isRandomlyTicking(this.asFg(state));
+                this.bgi().invokeIsRandomlyTicking(this.asBg(state)) || this.fgi().invokeIsRandomlyTicking(this.asFg(state));
             tickingStates.put(state, ticking);
             if (ticking) numTicking++;
         }
@@ -169,7 +180,7 @@ public class OreVariant extends SharedStateBlock {
                 .withParameter(LootContextParams.BLOCK_STATE, state)
                 .create(LootContextParamSets.BLOCK));
         } else {
-            drops = this.fg.getDrops(this.asFg(state), builder);
+            drops = this.fgi().invokeGetDrops(this.asFg(state), builder);
         }
         return this.filterDrops(this.updateCount(drops, state, builder), state, builder);
     }
@@ -219,7 +230,10 @@ public class OreVariant extends SharedStateBlock {
     private boolean hasSilkTouch(final LootParams.Builder builder) {
         final ItemStack tool = builder.getOptionalParameter(LootContextParams.TOOL);
         if (tool == null) return false;
-        return EnchantmentHelper.getEnchantments(tool).containsKey(Enchantments.SILK_TOUCH);
+        return EnchantmentHelper.getItemEnchantmentLevel(
+            builder.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH),
+            tool
+        ) > 0;
     }
 
     private List<ItemStack> updateDense(final List<ItemStack> drops) {
@@ -243,7 +257,7 @@ public class OreVariant extends SharedStateBlock {
 
     @Override
     public boolean propagatesSkylightDown(final BlockState state, final BlockGetter getter, final BlockPos pos) {
-        return this.bg.propagatesSkylightDown(state, getter, pos);
+        return this.bgi().invokePropagatesSkylightDown(state, getter, pos);
     }
 
     @Override
@@ -334,10 +348,11 @@ public class OreVariant extends SharedStateBlock {
     }
 
     @Override
-    public void playerWillDestroy(final Level level, final BlockPos pos, final BlockState state, final Player player) {
+    public BlockState playerWillDestroy(final Level level, final BlockPos pos, final BlockState state, final Player player) {
         final Level interceptor = this.primeRestricted(level, state, this.bg, pos);
         try {
             this.bg.playerWillDestroy(interceptor, pos, this.asBg(state), player);
+            return super.playerWillDestroy(level, pos, state, player);
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }
@@ -350,12 +365,12 @@ public class OreVariant extends SharedStateBlock {
 
     @Override
     @Environment(EnvType.CLIENT)
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter getter, List<Component> list, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> list, TooltipFlag flag) {
         final int size = list.size();
-        this.bg.appendHoverText(stack, getter, list, flag);
+        this.bg.appendHoverText(stack, ctx, list, flag);
 
         if (size == list.size()) {
-            this.fg.appendHoverText(stack, getter, list, flag);
+            this.fg.appendHoverText(stack, ctx, list, flag);
         }
     }
 
@@ -367,7 +382,7 @@ public class OreVariant extends SharedStateBlock {
             if (facing.getBlock() instanceof OreVariant v && v.bg.equals(this.bg)) {
                 facing = this.asBg(facing);
             }
-            return copyInto(state, this.bg.updateShape(this.asBg(state), dir, facing, level, from, to));
+            return copyInto(state, this.bgi().invokeUpdateShape(this.asBg(state), dir, facing, level, from, to));
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }
@@ -381,7 +396,7 @@ public class OreVariant extends SharedStateBlock {
             if (facing instanceof OreVariant v && v.bg.equals(this.bg)) {
                 facing = this.bg;
             }
-            this.bg.neighborChanged(this.asBg(state), level, pos, facing, at, bl);
+            this.bgi().invokeNeighborChanged(this.asBg(state), level, pos, facing, at, bl);
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }
@@ -394,11 +409,11 @@ public class OreVariant extends SharedStateBlock {
         try {
             final boolean same = this == old.getBlock();
             final BlockState bgOld = same ? this.asBg(old) : old;
-            this.bg.onPlace(this.asBg(state), interceptor, pos, bgOld, bl);
+            this.bgi().invokeOnPlace(this.asBg(state), interceptor, pos, bgOld, bl);
 
             interceptor = this.prime(level, state, this.fg);
             final BlockState fgOld = same ? this.asFg(old) : old;
-            this.fg.onPlace(this.asFg(state), interceptor, pos, fgOld, bl);
+            this.fgi().invokeOnPlace(this.asFg(state), interceptor, pos, fgOld, bl);
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }
@@ -411,11 +426,11 @@ public class OreVariant extends SharedStateBlock {
         try {
             final boolean same = this == newState.getBlock();
             final BlockState bgOld = same ? this.asBg(newState) : newState;
-            this.bg.onRemove(this.asBg(state), interceptor, pos, bgOld, bl);
+            this.bgi().invokeOnRemove(this.asBg(state), interceptor, pos, bgOld, bl);
 
             interceptor = this.prime(level, state, this.fg);
             final BlockState fgOld = same ? this.asFg(newState) : newState;
-            this.fg.onRemove(this.asFg(state), interceptor, pos, fgOld, bl);
+            this.fgi().invokeOnRemove(this.asFg(state), interceptor, pos, fgOld, bl);
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }
@@ -423,15 +438,30 @@ public class OreVariant extends SharedStateBlock {
 
     @Override
     @SuppressWarnings("deprecation")
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         Level interceptor = this.primeRestricted(level, state, this.bg, pos);
         try {
-            final InteractionResult bgr = this.bg.use(this.asBg(state), interceptor, pos, player, hand, hit);
+            final InteractionResult bgr = this.bgi().invokeUseWithoutItem(this.asBg(state), interceptor, pos, player, hit);
 
             interceptor = this.prime(level, state, this.fg);
-            final InteractionResult fgr = this.fg.use(this.asFg(state), interceptor, pos, player, hand, hit);
+            final InteractionResult fgr = this.fgi().invokeUseWithoutItem(this.asFg(state), interceptor, pos, player, hit);
 
             return bgr == InteractionResult.FAIL ? InteractionResult.FAIL : fgr;
+        } finally {
+            InterceptorAccessor.dispose(interceptor);
+        }
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        Level interceptor = this.primeRestricted(level, state, this.bg, pos);
+        try {
+            final ItemInteractionResult bgr = this.bgi().invokeUseItemOn(stack, this.asBg(state), interceptor, pos, player, hand, hit);
+
+            interceptor = this.prime(level, state, this.fg);
+            final ItemInteractionResult fgr = this.fgi().invokeUseItemOn(stack, this.asFg(state), interceptor, pos, player, hand, hit);
+            return bgr == ItemInteractionResult.FAIL ? ItemInteractionResult.FAIL : fgr;
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }
@@ -442,10 +472,10 @@ public class OreVariant extends SharedStateBlock {
     public boolean triggerEvent(final BlockState state, final Level level, final BlockPos pos, final int i, final int j) {
         Level interceptor = this.primeRestricted(level, state, this.bg, pos);
         try {
-            final boolean bge = this.bg.triggerEvent(this.asBg(state), level, pos, i, j);
+            final boolean bge = this.bgi().invokeTriggerEvent(this.asBg(state), level, pos, i, j);
 
             interceptor = this.prime(level, state, this.fg);
-            final boolean fge = this.fg.triggerEvent(this.asFg(state), level, pos, i, j);
+            final boolean fge = this.fgi().invokeTriggerEvent(this.asFg(state), level, pos, i, j);
             return bge || fge;
         } finally {
             InterceptorAccessor.dispose(interceptor);
@@ -456,14 +486,14 @@ public class OreVariant extends SharedStateBlock {
     @Environment(EnvType.CLIENT)
     @SuppressWarnings("deprecation")
     public RenderShape getRenderShape(final BlockState state) {
-        return this.bg.getRenderShape(this.asBg(state));
+        return this.bgi().invokeGetRenderShape(this.asBg(state));
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public boolean useShapeForLightOcclusion(final BlockState state) {
         final Boolean b = this.onPreInit(cfg ->
-            cfg.bg.useShapeForLightOcclusion(copyInto(cfg.bg.defaultBlockState(), state)));
+            ((BlockBehaviourInvoker) cfg.bg).invokeUseShapeForLightOcclusion(copyInto(cfg.bg.defaultBlockState(), state)));
         return b != null ? b : false;
     }
 
@@ -481,65 +511,65 @@ public class OreVariant extends SharedStateBlock {
     @Override
     @SuppressWarnings("deprecation")
     public FluidState getFluidState(final BlockState state) {
-        return this.bg.getFluidState(this.asBg(state));
+        return this.bgi().invokeGetFluidState(this.asBg(state));
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public boolean isSignalSource(final BlockState state) {
-        return this.bg.isSignalSource(this.asBg(state));
+        return this.bgi().invokeIsSignalSource(this.asBg(state));
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public boolean hasAnalogOutputSignal(final BlockState state) {
-        return this.bg.hasAnalogOutputSignal(this.asBg(state));
+        return this.bgi().invokeHasAnalogOutputSignal(this.asBg(state));
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public BlockState rotate(final BlockState state, final Rotation rotation) {
-        return copyInto(state, this.bg.rotate(this.asBg(state), rotation));
+        return copyInto(state, this.bgi().invokeRotate(this.asBg(state), rotation));
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public BlockState mirror(final BlockState state, final Mirror mirror) {
-        return copyInto(state, this.bg.mirror(this.asBg(state), mirror));
+        return copyInto(state, this.bgi().invokeMirror(this.asBg(state), mirror));
     }
 
     @Override
     @Environment(EnvType.CLIENT)
     @SuppressWarnings("deprecation")
     public VoxelShape getOcclusionShape(final BlockState state, final BlockGetter getter, final BlockPos pos) {
-        return this.bg.getOcclusionShape(this.asBg(state), getter, pos);
+        return this.bgi().invokeGetOcclusionShape(this.asBg(state), getter, pos);
     }
 
     @Override
     @Environment(EnvType.CLIENT)
     @SuppressWarnings("deprecation")
     public VoxelShape getShape(final BlockState state, final BlockGetter getter, final BlockPos pos, final CollisionContext ctx) {
-        return this.bg.getShape(this.asBg(state), getter, pos, ctx);
+        return this.bgi().invokeGetShape(this.asBg(state), getter, pos, ctx);
     }
 
     @Override
     @Environment(EnvType.CLIENT)
     @SuppressWarnings("deprecation")
     public VoxelShape getBlockSupportShape(final BlockState state, final BlockGetter getter, final BlockPos pos) {
-        return this.bg.getBlockSupportShape(this.asBg(state), getter, pos);
+        return this.bgi().invokeGetBlockSupportShape(this.asBg(state), getter, pos);
     }
 
     @Override
     @Environment(EnvType.CLIENT)
     @SuppressWarnings("deprecation")
     public VoxelShape getInteractionShape(final BlockState state, final BlockGetter getter, final BlockPos pos) {
-        return this.bg.getInteractionShape(this.asBg(state), getter, pos);
+        return this.bgi().invokeGetInteractionShape(this.asBg(state), getter, pos);
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public int getLightBlock(final BlockState state, final BlockGetter getter, final BlockPos pos) {
-        return this.bg.getLightBlock(this.asBg(state), getter, pos);
+        return this.bgi().invokeGetLightBlock(this.asBg(state), getter, pos);
     }
 
     @Nullable
@@ -547,45 +577,45 @@ public class OreVariant extends SharedStateBlock {
     @Environment(EnvType.CLIENT)
     @SuppressWarnings("deprecation")
     public MenuProvider getMenuProvider(final BlockState state, final Level level, final BlockPos pos) {
-        return this.bg.getMenuProvider(this.asBg(state), level, pos);
+        return this.bgi().invokeGetMenuProvider(this.asBg(state), level, pos);
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public boolean canSurvive(final BlockState state, final LevelReader level, final BlockPos pos) {
-        return this.bg.canSurvive(this.asBg(state), level, pos);
+        return this.bgi().invokeCanSurvive(this.asBg(state), level, pos);
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public float getShadeBrightness(final BlockState state, final BlockGetter getter, final BlockPos pos) {
-        return this.bg.getShadeBrightness(this.asBg(state), getter, pos);
+        return this.bgi().invokeGetShadeBrightness(this.asBg(state), getter, pos);
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public int getAnalogOutputSignal(final BlockState state, final Level level, final BlockPos pos) {
-        return this.bg.getAnalogOutputSignal(this.asBg(state), level, pos);
+        return this.bgi().invokeGetAnalogOutputSignal(this.asBg(state), level, pos);
     }
 
     @Override
     @Environment(EnvType.CLIENT)
     @SuppressWarnings("deprecation")
     public VoxelShape getCollisionShape(BlockState state, BlockGetter getter, BlockPos pos, CollisionContext ctx) {
-        return this.bg.getCollisionShape(this.asBg(state), getter, pos, ctx);
+        return this.bgi().invokeGetCollisionShape(this.asBg(state), getter, pos, ctx);
     }
 
     @Override
     @Environment(EnvType.CLIENT)
     @SuppressWarnings("deprecation")
     public VoxelShape getVisualShape(BlockState state, BlockGetter getter, BlockPos pos, CollisionContext ctx) {
-        return this.bg.getVisualShape(this.asBg(state), getter, pos, ctx);
+        return this.bgi().invokeGetVisualShape(this.asBg(state), getter, pos, ctx);
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public float getDestroyProgress(final BlockState state, final Player player, final BlockGetter getter, final BlockPos pos) {
-        return this.fg.getDestroyProgress(this.asFg(state), player, getter, pos);
+        return this.fgi().invokeGetDestroyProgress(this.asFg(state), player, getter, pos);
     }
 
     @Override
@@ -595,10 +625,10 @@ public class OreVariant extends SharedStateBlock {
             final boolean dropExperience) {
         ServerLevel interceptor = this.primeRestricted(server, state, this.bg, pos);
         try {
-            this.bg.spawnAfterBreak(this.asBg(state), interceptor, pos, stack, dropExperience);
+            this.bgi().invokeSpawnAfterBreak(this.asBg(state), interceptor, pos, stack, dropExperience);
 
             interceptor = this.prime(server, state, this.fg);
-            this.fg.spawnAfterBreak(this.asFg(state), interceptor, pos, stack, dropExperience);
+            this.fgi().invokeSpawnAfterBreak(this.asFg(state), interceptor, pos, stack, dropExperience);
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }
@@ -609,10 +639,10 @@ public class OreVariant extends SharedStateBlock {
     public void attack(final BlockState state, final Level level, final BlockPos pos, final Player player) {
         Level interceptor = this.primeRestricted(level, state, this.bg, pos);
         try {
-            this.bg.attack(this.asBg(state), interceptor, pos, player);
+            this.bgi().invokeAttack(this.asBg(state), interceptor, pos, player);
 
             interceptor = this.prime(level, state, this.fg);
-            this.fg.attack(this.asFg(state), interceptor, pos, player);
+            this.fgi().invokeAttack(this.asFg(state), interceptor, pos, player);
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }
@@ -621,8 +651,8 @@ public class OreVariant extends SharedStateBlock {
     @Override
     @SuppressWarnings("deprecation")
     public int getSignal(final BlockState state, final BlockGetter getter, final BlockPos pos, final Direction dir) {
-        final int bgs = this.bg.getSignal(this.asBg(state), getter, pos, dir);
-        final int fgs = this.fg.getSignal(this.asFg(state), getter, pos, dir);
+        final int bgs = this.bgi().invokeGetSignal(this.asBg(state), getter, pos, dir);
+        final int fgs = this.fgi().invokeGetSignal(this.asFg(state), getter, pos, dir);
         return Math.max(bgs, fgs);
     }
 
@@ -631,10 +661,10 @@ public class OreVariant extends SharedStateBlock {
     public void entityInside(final BlockState state, final Level level, final BlockPos pos, final Entity entity) {
         Level interceptor = this.primeRestricted(level, state, this.bg, pos);
         try {
-            this.bg.entityInside(this.asBg(state), interceptor, pos, entity);
+            this.bgi().invokeEntityInside(this.asBg(state), interceptor, pos, entity);
 
             interceptor = this.prime(level, state, this.fg);
-            this.fg.entityInside(this.asFg(state), interceptor, pos, entity);
+            this.fgi().invokeEntityInside(this.asFg(state), interceptor, pos, entity);
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }
@@ -643,16 +673,16 @@ public class OreVariant extends SharedStateBlock {
     @Override
     @SuppressWarnings("deprecation")
     public int getDirectSignal(final BlockState state, final BlockGetter getter, final BlockPos pos, final Direction dir) {
-        final int bgs = this.bg.getDirectSignal(this.asBg(state), getter, pos, dir);
-        final int fgs = this.fg.getDirectSignal(this.asFg(state), getter, pos, dir);
+        final int bgs = this.bgi().invokeGetDirectSignal(this.asBg(state), getter, pos, dir);
+        final int fgs = this.fgi().invokeGetDirectSignal(this.asFg(state), getter, pos, dir);
         return Math.max(bgs, fgs);
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public void onProjectileHit(final Level level, final BlockState state, final BlockHitResult hit, final Projectile projectile) {
-        this.bg.onProjectileHit(level, this.asBg(state), hit, projectile);
-        this.fg.onProjectileHit(level, this.asFg(state), hit, projectile);
+        this.bgi().invokeOnProjectileHit(level, this.asBg(state), hit, projectile);
+        this.fgi().invokeOnProjectileHit(level, this.asFg(state), hit, projectile);
     }
 
     @Override
@@ -660,10 +690,10 @@ public class OreVariant extends SharedStateBlock {
     public void tick(final BlockState state, final ServerLevel server, final BlockPos pos, final RandomSource rand) {
         ServerLevel interceptor = this.primeRestricted(server, state, this.bg, pos);
         try {
-            this.bg.tick(this.asBg(state), interceptor, pos, rand);
+            this.bgi().invokeTick(this.asBg(state), interceptor, pos, rand);
 
             interceptor = this.prime(server, state, this.fg);
-            this.fg.tick(this.asFg(state), interceptor, pos, rand);
+            this.fgi().invokeTick(this.asFg(state), interceptor, pos, rand);
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }
@@ -674,10 +704,10 @@ public class OreVariant extends SharedStateBlock {
     public void randomTick(final BlockState state, final ServerLevel server, final BlockPos pos, final RandomSource rand) {
         ServerLevel interceptor = this.primeRestricted(server, state, this.bg, pos);
         try {
-            this.bg.randomTick(this.asBg(state), interceptor, pos, rand);
+            this.bgi().invokeRandomTick(this.asBg(state), interceptor, pos, rand);
 
             interceptor = this.prime(server, state, this.fg);
-            this.fg.randomTick(this.asFg(state), interceptor, pos, rand);
+            this.fgi().invokeRandomTick(this.asFg(state), interceptor, pos, rand);
         } finally {
             InterceptorAccessor.dispose(interceptor);
         }

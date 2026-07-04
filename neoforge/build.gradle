@@ -1,0 +1,185 @@
+plugins {
+    id "com.github.johnrengelman.shadow"
+}
+
+architectury {
+    platformSetupLoomIde()
+    neoForge()
+}
+
+loom {
+    mods {
+        osv {
+            sourceSet project(":common").sourceSets.main
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+configurations {
+    common
+    shadowCommon
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+}
+
+dependencies {
+    shadowCommon(project(path: ":common", configuration: "transformProductionNeoForge")) {
+        transitive = false
+    }
+    common(project(path: ":common", configuration: "namedElements")) {
+        transitive = false
+    }
+    testImplementation(project(path: ":common", configuration: "namedElements")) {
+        transitive = false
+    }
+
+    neoForge "net.neoforged:neoforge:$neoforge_version"
+    modApi "dev.architectury:architectury-neoforge:$architectury_version"
+    modCompileOnly "curse.maven:Create-328085:$create_maven_neoforge_version"
+    bundle group: "com.github.PersonTheCat", name: "FResult", version: fresult_version
+    bundle group: "com.github.PersonTheCat", name: "FastNoise", version: fastnoise_version
+    bundle group: "com.github.PersonTheCat", name: "hjson-java", version: hjson_version
+    developmentNeoForge(group: "com.github.PersonTheCat", name: "FResult", version: fresult_version) {
+        transitive = false
+    }
+    developmentNeoForge(group: "com.github.PersonTheCat", name: "FastNoise", version: fastnoise_version) {
+        transitive = false
+    }
+    developmentNeoForge(group: "com.github.PersonTheCat", name: "hjson-java", version: hjson_version) {
+        transitive = false
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+            "Specification-Title": mod_name,
+            "Specification-Vendor": mod_vendor,
+            "Specification-Version": mod_version,
+            "Implementation-Title": mod_id,
+            "Implementation-Version": mod_version,
+            "Implementation-Vendor": mod_vendor,
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+            "MixinConfigs": "catlib.common.mixins.json,catlib.forge.mixins.json,osv.mixins.json,osv.mixins.neoforge.json"
+        )
+    }
+}
+
+processResources {
+    filesMatching(["META-INF/neoforge.mods.toml", "pack.mcmeta"]) {
+        expand project.properties
+    }
+}
+
+shadowJar {
+    exclude "fabric.mod.json"
+    configurations = [project.configurations.shadowCommon, project.configurations.bundle]
+    archiveClassifier = "dev-shadow"
+}
+
+remapJar {
+    input.set shadowJar.archiveFile
+    dependsOn shadowJar
+    archiveClassifier = ""
+}
+
+task verifyRemappedJarContents {
+    dependsOn remapJar
+    inputs.file(remapJar.archiveFile)
+    doLast {
+        final File jarFile = remapJar.archiveFile.get().asFile
+        final byte[] token = "@MOD_".getBytes("UTF-8")
+        final byte[] clientOnlyPackage = "net/minecraft/client".getBytes("UTF-8")
+        final List<String> tokenEntries = []
+        final List<String> serverLoadedClientReferences = []
+        final Set<String> requiredEntries = [
+            "META-INF/neoforge.mods.toml",
+            "io/github/joseetoon/genlib/util/LibReference.class",
+            "io/github/joseetoon/osv/config/neoforge/CfgImpl.class",
+            "catlib.common.mixins.json",
+            "catlib.forge.mixins.json",
+            "assets/genlib/lang/en_us.json",
+            "data/genlib/neoforge/biome_modifier/catlib_modifier.json"
+        ] as Set
+        final Set<String> serverLoadedEntries = [
+            "io/github/joseetoon/genlib/event/error/LibErrorContext.class",
+            "io/github/joseetoon/genlib/exception/FormattedException.class",
+            "io/github/joseetoon/genlib/command/CommandContextWrapper.class",
+            "io/github/joseetoon/osv/preset/data/ModelSettings.class",
+            "io/github/joseetoon/osv/preset/data/ModelSettings\$Type.class"
+        ] as Set
+
+        new java.util.zip.ZipFile(jarFile).withCloseable { zip ->
+            final Set<String> presentEntries = zip.entries().collect { it.name } as Set
+            final Set<String> missingEntries = requiredEntries.findAll { !presentEntries.contains(it) } as Set
+            if (!missingEntries.isEmpty()) {
+                throw new GradleException(
+                    "Remapped jar is missing required standalone entries:\n" + missingEntries.join("\n")
+                )
+            }
+
+            final String metadata = zip.getInputStream(zip.getEntry("META-INF/neoforge.mods.toml"))
+                .getText("UTF-8")
+            if (metadata.contains('modId="genlib"') || metadata.contains("modId='genlib'")) {
+                throw new GradleException("Remapped jar still declares an external genlib mod dependency")
+            }
+
+            zip.entries().each { entry ->
+                if (entry.directory || !shouldScanJarEntry(entry.name)) {
+                    return
+                }
+                final byte[] bytes = zip.getInputStream(entry).bytes
+                if (containsJarBytes(bytes, token)) {
+                    tokenEntries << entry.name
+                }
+                if (serverLoadedEntries.contains(entry.name) && containsJarBytes(bytes, clientOnlyPackage)) {
+                    serverLoadedClientReferences << entry.name
+                }
+            }
+        }
+
+        if (!tokenEntries.isEmpty()) {
+            throw new GradleException(
+                "Unexpanded @MOD_* token found in remapped jar entries:\n" + tokenEntries.join("\n")
+            )
+        }
+        if (!serverLoadedClientReferences.isEmpty()) {
+            throw new GradleException(
+                "Server-loaded classes reference net.minecraft.client in the remapped jar:\n"
+                    + serverLoadedClientReferences.join("\n")
+            )
+        }
+    }
+}
+
+check {
+    dependsOn verifyRemappedJarContents
+}
+
+static boolean shouldScanJarEntry(final String name) {
+    return name == "META-INF/MANIFEST.MF"
+        || name.endsWith(".class")
+        || name.endsWith(".json")
+        || name.endsWith(".toml")
+        || name.endsWith(".mcmeta")
+}
+
+static boolean containsJarBytes(final byte[] haystack, final byte[] needle) {
+    if (needle.length == 0 || haystack.length < needle.length) {
+        return false
+    }
+    for (int i = 0; i <= haystack.length - needle.length; i++) {
+        boolean matched = true
+        for (int j = 0; j < needle.length; j++) {
+            if (haystack[i + j] != needle[j]) {
+                matched = false
+                break
+            }
+        }
+        if (matched) {
+            return true
+        }
+    }
+    return false
+}

@@ -13,7 +13,7 @@ public class OsvPaths {
 
     public static ResourceLocation toOsvTextureId(final ResourceLocation id) {
         final String subbed = PathUtils.namespaceToSub(id);
-        return new ResourceLocation(Reference.MOD_ID, subbed);
+        return ResourceLocation.fromNamespaceAndPath(Reference.MOD_ID, subbed);
     }
 
     public static String fromForeign(final ResourceLocation id, final String prefix) {
